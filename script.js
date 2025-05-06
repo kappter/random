@@ -56,7 +56,7 @@ function initializeChart() {
           padding: 6,
           formatter: (value) => {
             const tally = Math.floor(value / 5) + (value % 5 > 0 ? 1 : 0);
-            return `Tally: ${tally}`;
+            return `Count: ${value}\nTally: ${tally}`;
           },
           color: '#000',
           font: { weight: 'bold', size: 14 },
@@ -169,6 +169,8 @@ function calculateDigits(digits, calcType) {
   document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
   document.getElementById('guessSection').style.display = 'block';
   let currentDigitIndex = 0;
+  let updateCounter = 0;
+  const updateInterval = 50; // Update chart every 50 digits
   const digitGenerator = calcType === 'pi' ? generatePiDigits(digits) :
                          calcType === 'gaussian' ? generateGaussianDigits(digits) :
                          generatePerlinDigits(digits);
@@ -177,7 +179,7 @@ function calculateDigits(digits, calcType) {
   function updateLoop() {
     const result = digitGenerator.next();
     if (result.done || currentDigitIndex >= digits) {
-      // Update visible chart directly
+      // Final chart update
       console.log('Final chart update');
       const target = parseInt(document.getElementById('targetCount')?.value) || 500;
       updateChartData(myChart, counts, target);
@@ -195,7 +197,15 @@ function calculateDigits(digits, calcType) {
     digitSequence += digit;
     document.getElementById('liveDigit').textContent = digit;
     document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
-    
+
+    // Update chart every 'updateInterval' digits
+    updateCounter++;
+    if (updateCounter >= updateInterval) {
+      const target = parseInt(document.getElementById('targetCount')?.value) || 500;
+      updateChartData(myChart, counts, target);
+      updateCounter = 0;
+    }
+
     currentDigitIndex++;
     requestAnimationFrame(updateLoop);
   }
