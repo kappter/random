@@ -64,7 +64,8 @@ function initializeChart() {
         }
       },
       animation: {
-        duration: 0 // Disable animations
+        duration: 200, // Smooth transition duration in milliseconds
+        easing: 'easeInOutQuad' // Smooth easing function
       }
     }
   });
