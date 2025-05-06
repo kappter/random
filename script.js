@@ -56,10 +56,12 @@ function calculatePi() {
   document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
   document.getElementById('guessSection').style.display = 'block';
   let currentDigitIndex = 0;
+  let piDigits = '';
 
   const interval = setInterval(() => {
     if (4 * q + r - t < n * t) {
-      const digit = Math.floor(n); // Ensure digit is an integer
+      const digit = Math.floor(n) % 10; // Ensure digit is 0-9
+      piDigits += digit;
       counts[digit]++;
       document.getElementById('liveDigit').textContent = digit;
       document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
@@ -72,17 +74,17 @@ function calculatePi() {
       myChart.data.datasets[0].borderColor = counts.map((_, i) => i === firstToTarget ? 'rgb(200, 0, 0)' : 'rgb(100, 100, 100)');
       
       // Update chart data
-      myChart.data.datasets[0].data = [...counts]; // Spread to ensure array is copied
+      myChart.data.datasets[0].data = [...counts];
       myChart.options.scales.y.max = Math.max(...counts, 1) * 1.2;
       myChart.update();
       
-      const nr = 10 * (r - n * t);
-      n = ((10 * (3 * q + r)) / t) - (10 * n);
+      const nr = (r - n * t) * 10;
+      n = Math.floor(((10 * (3 * q + r)) / t) - (10 * n));
       q *= 10;
       r = nr;
     } else {
       const nr = (2 * q + r) * l;
-      const nn = (q * (7 * k) + 2 + (r * l)) / (t * l);
+      const nn = Math.floor((q * (7 * k) + 2 + (r * l)) / (t * l));
       q *= k;
       t *= l;
       l += 2;
@@ -95,6 +97,7 @@ function calculatePi() {
       clearInterval(interval);
       document.getElementById('liveDigit').textContent = 'Done';
       document.getElementById('progress').textContent = `Processed: ${digits}/${digits} digits`;
+      console.log('Pi digits:', piDigits); // For debugging
       sessionStorage.setItem('piDigitCounts', JSON.stringify(counts));
     }
   }, 50);
