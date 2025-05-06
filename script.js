@@ -46,7 +46,7 @@ function initializeChart() {
       },
       plugins: {
         datalabels: {
-          display: false, // Initially disabled, enabled only on final update
+          display: true,
           anchor: 'end',
           align: 'top',
           offset: 5,
@@ -150,8 +150,6 @@ function calculateDigits(digits, calcType) {
   document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
   document.getElementById('guessSection').style.display = 'block';
   let currentDigitIndex = 0;
-  let updateCounter = 0;
-  const updateInterval = 50; // Update chart every 50 digits
   const digitGenerator = calcType === 'pi' ? generatePiDigits(digits) :
                          calcType === 'gaussian' ? generateGaussianDigits(digits) :
                          generatePerlinDigits(digits);
@@ -161,8 +159,16 @@ function calculateDigits(digits, calcType) {
     const result = digitGenerator.next();
     if (result.done || currentDigitIndex >= digits) {
       clearInterval(interval);
-      // Final chart update with datalabels enabled
-      myChart.options.plugins.datalabels.display = true;
+      // Single chart update at the end
+      const target = parseInt(document.getElementById('targetCount')?.value) || 500;
+      const firstToTarget = counts.map((count, index) => ({ digit: index, count }))
+        .find(d => d.count >= target)?.digit;
+      myChart.data.datasets[0].backgroundColor = counts.map((_, i) => 
+        i === firstToTarget ? 'rgb(255, 0, 0)' : digitColors[i]
+      );
+      myChart.data.datasets[0].borderColor = counts.map((_, i) => 
+        i === firstToTarget ? 'rgb(200, 0, 0)' : digitBorderColors[i]
+      );
       myChart.data.datasets[0].data = [...counts];
       myChart.options.scales.y.suggestedMax = Math.max(...counts, 1) * 1.2;
       myChart.update();
@@ -180,24 +186,6 @@ function calculateDigits(digits, calcType) {
     digitSequence += digit;
     document.getElementById('liveDigit').textContent = digit;
     document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
-    
-    // Update chart only every 'updateInterval' digits
-    updateCounter++;
-    if (updateCounter >= updateInterval) {
-      const target = parseInt(document.getElementById('targetCount')?.value) || 500;
-      const firstToTarget = counts.map((count, index) => ({ digit: index, count }))
-        .find(d => d.count >= target)?.digit;
-      myChart.data.datasets[0].backgroundColor = counts.map((_, i) => 
-        i === firstToTarget ? 'rgb(255, 0, 0)' : digitColors[i]
-      );
-      myChart.data.datasets[0].borderColor = counts.map((_, i) => 
-        i === firstToTarget ? 'rgb(200, 0, 0)' : digitBorderColors[i]
-      );
-      myChart.data.datasets[0].data = [...counts];
-      myChart.options.scales.y.suggestedMax = Math.max(...counts, 1) * 1.2;
-      myChart.update('none'); // Minimal update to reduce flicker
-      updateCounter = 0;
-    }
     
     currentDigitIndex++;
   }, 50);
