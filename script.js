@@ -1,5 +1,4 @@
 let myChart;
-let hiddenChart;
 let counts = new Array(10).fill(0);
 
 // Vibrant color palette for digits 0-9
@@ -17,10 +16,10 @@ const digitColors = [
 ];
 const digitBorderColors = digitColors.map(color => color.replace('rgb', 'rgba').replace(')', ', 0.8)'));
 
-function initializeChart(canvasId, isHidden = false) {
-  console.log(`Initializing ${isHidden ? 'hidden' : 'visible'} chart`);
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  const chart = new Chart(ctx, {
+function initializeChart() {
+  console.log('Initializing chart');
+  const ctx = document.getElementById('digitChart').getContext('2d');
+  myChart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
@@ -69,11 +68,11 @@ function initializeChart(canvasId, isHidden = false) {
       }
     }
   });
-  return chart;
+  return myChart;
 }
 
 function updateChartData(chart, data, target) {
-  console.log('Updating chart data');
+  console.log('Updating chart data with counts:', data);
   const firstToTarget = data.map((count, index) => ({ digit: index, count }))
     .find(d => d.count >= target)?.digit;
   chart.data.datasets[0].backgroundColor = data.map((_, i) => 
@@ -164,8 +163,7 @@ function validateAndCalculate() {
 function calculateDigits(digits, calcType) {
   counts = new Array(10).fill(0);
   if (!myChart) {
-    myChart = initializeChart('digitChart');
-    hiddenChart = initializeChart('hiddenChart', true);
+    myChart = initializeChart();
   }
   document.getElementById('liveDigit').textContent = 'Calculating...';
   document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
@@ -179,16 +177,10 @@ function calculateDigits(digits, calcType) {
   function updateLoop() {
     const result = digitGenerator.next();
     if (result.done || currentDigitIndex >= digits) {
-      // Update hidden chart, then copy to visible chart
+      // Update visible chart directly
       console.log('Final chart update');
       const target = parseInt(document.getElementById('targetCount')?.value) || 500;
-      updateChartData(hiddenChart, counts, target);
-      // Copy hidden canvas to visible canvas
-      myChart.data.datasets[0].data = [...counts];
-      myChart.data.datasets[0].backgroundColor = hiddenChart.data.datasets[0].backgroundColor;
-      myChart.data.datasets[0].borderColor = hiddenChart.data.datasets[0].borderColor;
-      myChart.options.scales.y.suggestedMax = hiddenChart.options.scales.y.suggestedMax;
-      myChart.update();
+      updateChartData(myChart, counts, target);
       document.getElementById('liveDigit').textContent = 'Done';
       document.getElementById('progress').textContent = `Processed: ${digits}/${digits} digits`;
       console.log('Digit sequence:', digitSequence);

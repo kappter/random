@@ -27,13 +27,10 @@ button {
   position: relative;
   transition: none;
 }
-#digitChart, #hiddenChart {
+#digitChart {
   width: 800px !important;
   height: 400px !important;
   transition: none;
-}
-#hiddenChart {
-  display: none;
 }
 #guessSection {
   margin-top: 20px;
