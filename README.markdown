@@ -1,23 +1,29 @@
 # Live Random Calculator
 
 ## Overview
-The Live Random Calculator is a web application that generates and visualizes random digit sequences using different methods (Pi digits, Gaussian distribution, Perlin noise, and Linear Congruential Generator). It displays the frequency of each digit (0–9) in a bar chart, updating in real-time as digits are processed. The app includes an optional interactive guessing game where users can predict which digit will have the most instances after a set number of digits, with results displayed automatically upon completion if a guess is submitted. Users can view the generated digit sequence in a textbox as it’s built and copy the sequence to the clipboard.
+The Live Random Calculator is a web application that generates and visualizes random digit sequences using various methods (Pi digits, Gaussian distribution, Perlin noise, Linear Congruential Generator, Mersenne Twister, Logistic Map, Middle-Square, Xorshift, Quantum Random, and Cellular Automaton Rule 30). It displays the frequency of each digit (0–9) in a bar chart, updating in real-time as digits are processed. The app includes an optional interactive guessing game where users can predict which digit will have the most instances after a set number of digits, with results displayed automatically upon completion if a guess is submitted. Users can view the generated digit sequence in a textbox below the chart (to the right of the summary report) as it’s built and copy the sequence to the clipboard.
 
 ## Features
-- **Multiple Generation Methods**: Choose between four digit generation methods:
+- **Multiple Generation Methods**: Choose between ten digit generation methods:
   - **Pi Digits**: Uses a precomputed array of Pi digits (repeating as needed).
   - **Gaussian Digits**: Generates digits using a Gaussian distribution (Box-Muller transform).
   - **Perlin Noise Digits**: Generates digits using Perlin noise for a natural, smooth distribution.
   - **LCG Digits**: Generates digits using a Linear Congruential Generator for a uniform pseudo-random distribution.
+  - **Mersenne Twister**: Uses the Mersenne Twister algorithm for high-quality pseudorandom digits with a long period.
+  - **Logistic Map**: Generates digits from a chaotic logistic map (xₙ₊₁ = r * xₙ * (1 - xₙ)), producing deterministic but chaotic sequences.
+  - **Middle-Square**: Uses von Neumann’s Middle-Square method, squaring a number and taking middle digits, which may cycle.
+  - **Xorshift**: Generates digits using the Xorshift algorithm, a fast PRNG with bitwise operations.
+  - **Quantum Random (API)**: Fetches true random digits from the ANU Quantum Random Number Generator API, with LCG fallback if the API fails.
+  - **Cellular Automaton Rule 30**: Generates digits from Rule 30, a one-dimensional cellular automaton with complex, random-like patterns.
 - **Real-Time Visualization**: 
   - A bar chart updates every 50 digits during calculation, showing the frequency of each digit.
   - Each bar displays a tally (count divided by 5, rounded up, e.g., "3") superimposed in white text inside the bar, and a count (e.g., "Count: 13") in a white box above the bar.
   - Digits with the highest count are highlighted in dark red (`rgb(139, 0, 0)`) during and after calculation, with all tied winners highlighted.
 - **Interactive Feedback**:
   - Live display of the current digit being processed and the total digits processed (e.g., "Processed: 500/1000 digits").
-  - A readonly textbox displays the generated digit sequence as it’s built.
+  - A readonly textbox below the chart (to the right of the summary report) displays the generated digit sequence as it’s built.
   - A "Copy Digits" button allows users to copy the digit sequence to the clipboard.
-  - A summary report appears below the chart after calculation, listing each digit’s tally and count (e.g., "Digit 0: 21 tallies (Count: 102)").
+  - A summary report appears below the chart (to the left of the digit sequence) after calculation, listing each digit’s tally and count (e.g., "Digit 0: 21 tallies (Count: 102)").
 - **Optional Guessing Game**:
   - Users can choose to guess which digit (0–9) will have the most instances after the specified number of digits are processed.
   - The guess section is visible by default above the chart, allowing users to enter and submit a guess before starting the calculation.
@@ -51,7 +57,7 @@ The Live Random Calculator is a web application that generates and visualizes ra
    - Navigate to the app URL in a modern browser (e.g., Chrome, Firefox, Edge).
 2. **Configure the Calculation**:
    - Enter the number of digits to generate (between 100 and 10,000) in the "Number of Digits" input (defaults to 100).
-   - Select a calculation type from the dropdown: "Pi Digits", "Gaussian Digits", "Perlin Noise Digits", or "LCG Digits".
+   - Select a calculation type from the dropdown: "Pi Digits", "Gaussian Digits", "Perlin Noise Digits", "LCG Digits", "Mersenne Twister", "Logistic Map", "Middle-Square", "Xorshift", "Quantum Random (API)", or "Cellular Automaton Rule 30".
 3. **Play the Guessing Game (Optional)**:
    - In the "Guess Which Digit Will Have the Most Instances" section (visible above the chart), enter a digit (0–9).
    - Click "Submit Guess" to lock in your guess; a confirmation appears (e.g., "Guess submitted: Digit 5").
@@ -59,15 +65,15 @@ The Live Random Calculator is a web application that generates and visualizes ra
    - You can hide the guess section using the "Hide Guess Section" button if you don’t want to guess.
 4. **Start the Calculation**:
    - Click the "Calculate" button to begin generating digits (no guess required).
-   - Watch the digit sequence build in the "Generated Digits" textbox in real-time.
+   - Watch the digit sequence build in the "Generated Digits" textbox below the chart (to the right of the summary report) in real-time.
    - The chart updates every 50 digits, with each bar showing its tally (e.g., "3") inside and count (e.g., "Count: 13") above, with leading digits highlighted in dark red.
    - The "Live Digit" display shows the current digit, and the "Processed" counter tracks progress.
    - After completion:
-     - A summary report appears below the chart, listing each digit’s tally and count.
+     - A summary report appears below the chart (to the left of the digit sequence), listing each digit’s tally and count.
      - If a guess was submitted, the guess result is displayed automatically (e.g., "Correct! Your guess (9) was one of the digits with the most instances (13 occurrences).").
      - The guess input is re-enabled for the next calculation.
 5. **Copy the Digit Sequence**:
-   - Click the "Copy Digits" button to copy the generated digit sequence to your clipboard.
+   - Click the "Copy Digits" button below the chart (next to the "Generated Digits" textbox) to copy the generated digit sequence to your clipboard.
    - A confirmation alert will appear if successful, or an error message if the copy fails.
 
 ## Debugging Tips
@@ -85,9 +91,11 @@ The Live Random Calculator is a web application that generates and visualizes ra
 - **Copy Digits Issues**:
   - If the "Copy Digits" button fails, check the console for errors (e.g., clipboard API restrictions).
   - Ensure your browser supports the Clipboard API; if not, manually copy from the textbox.
+- **Quantum Random Issues**:
+  - If the Quantum Random method fails, it falls back to LCG. Check the console for API errors (e.g., network issues or rate limits).
+  - Ensure internet connectivity for API access.
 
 ## Future Improvements
-- Add more digit generation methods (e.g., Mersenne Twister, chaotic maps).
 - Allow users to adjust the chart update frequency.
 - Enhance the guessing game with:
   - Historical guess accuracy tracking using `localStorage`.
@@ -96,6 +104,8 @@ The Live Random Calculator is a web application that generates and visualizes ra
 - Improve the UI with additional styling options, themes, or a downloadable summary report.
 - Customize data label appearance (e.g., font size, background opacity) for better readability.
 - Add formatting options for the digit sequence (e.g., spaces every 10 digits).
+- Add user-configurable parameters for methods like Logistic Map (e.g., adjustable `r`) or Middle-Square (e.g., seed input).
+- Visualize the Cellular Automaton Rule 30 evolution as an optional overlay.
 
 ## License
 This project is open-source and available under the MIT License.

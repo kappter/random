@@ -67,19 +67,29 @@
             <option value="gaussian">Gaussian Digits</option>
             <option value="perlin">Perlin Noise Digits</option>
             <option value="lcg">LCG Digits</option>
+            <option value="mersenne">Mersenne Twister</option>
+            <option value="logistic">Logistic Map</option>
+            <option value="middleSquare">Middle-Square</option>
+            <option value="xorshift">Xorshift</option>
+            <option value="quantum">Quantum Random (API)</option>
+            <option value="rule30">Cellular Automaton Rule 30</option>
         </select>
     </div>
     <button onclick="validateAndCalculate()">Calculate</button>
     <div>
         <p>Live Digit: <span id="liveDigit">Not started</span></p>
         <p id="progress">Processed: 0 digits</p>
-        <label for="digitSequence">Generated Digits:</label>
-        <textarea id="digitSequence" readonly rows="5" cols="50" placeholder="Digits will appear here as they are generated..."></textarea>
-        <br>
-        <button onclick="copyDigits()">Copy Digits</button>
     </div>
     <canvas id="digitChart" width="800" height="400"></canvas>
-    <div id="summaryReport"></div>
+    <div class="results-container">
+        <div id="summaryReport"></div>
+        <div class="digit-sequence-container">
+            <label for="digitSequence">Generated Digits:</label>
+            <textarea id="digitSequence" readonly rows="5" cols="30" placeholder="Digits will appear here as they are generated..."></textarea>
+            <br>
+            <button onclick="copyDigits()">Copy Digits</button>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>

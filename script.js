@@ -182,6 +182,146 @@ function* generateLCGDigits(numDigits) {
   }
 }
 
+// Mersenne Twister implementation (simplified)
+function* generateMersenneDigits(numDigits) {
+  let index = 0;
+  const seed = Date.now();
+  let mt = new Array(624);
+  let mtIndex = 0;
+
+  // Initialize the MT array
+  mt[0] = seed;
+  for (let i = 1; i < 624; i++) {
+    mt[i] = (1812433253 * (mt[i - 1] ^ (mt[i - 1] >> 30)) + i) & 0xffffffff;
+  }
+
+  function twist() {
+    for (let i = 0; i < 624; i++) {
+      const y = (mt[i] & 0x80000000) + (mt[(i + 1) % 624] & 0x7fffffff);
+      mt[i] = mt[(i + 397) % 624] ^ (y >> 1);
+      if (y % 2 !== 0) mt[i] ^= 0x9908b0df;
+    }
+  }
+
+  function extractNumber() {
+    if (mtIndex === 0) twist();
+    let y = mt[mtIndex];
+    y ^= (y >> 11);
+    y ^= (y << 7) & 0x9d2c5680;
+    y ^= (y << 15) & 0xefc60000;
+    y ^= (y >> 18);
+    mtIndex = (mtIndex + 1) % 624;
+    return y & 0xffffffff;
+  }
+
+  while (index < numDigits) {
+    const value = extractNumber() / 0xffffffff; // Normalize to [0, 1)
+    const digit = Math.floor(value * 10);
+    yield digit;
+    index++;
+  }
+}
+
+// Logistic Map digit generator
+function* generateLogisticDigits(numDigits) {
+  let index = 0;
+  let x = 0.1; // Initial value
+  const r = 3.9; // Chaos parameter
+  while (index < numDigits) {
+    x = r * x * (1 - x);
+    const digit = Math.floor(x * 10); // Map [0, 1) to 0-9
+    yield digit;
+    index++;
+  }
+}
+
+// Middle-Square Method digit generator
+function* generateMiddleSquareDigits(numDigits) {
+  let index = 0;
+  let seed = (Date.now() % 9000) + 1000; // 4-digit seed
+  while (index < numDigits) {
+    const squared = seed * seed;
+    const squaredStr = squared.toString().padStart(8, '0');
+    seed = parseInt(squaredStr.slice(2, 6)); // Take middle 4 digits
+    const digit = Math.floor((seed / 10000) * 10); // Map to 0-9
+    yield digit;
+    index++;
+  }
+}
+
+// Xorshift digit generator
+function* generateXorshiftDigits(numDigits) {
+  let index = 0;
+  let x = Date.now() % 4294967296;
+  while (index < numDigits) {
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    const value = (x & 0xffffffff) / 0xffffffff; // Normalize to [0, 1)
+    const digit = Math.floor(value * 10);
+    yield digit;
+    index++;
+  }
+}
+
+// Quantum Random digit generator (with LCG fallback)
+async function* generateQuantumDigits(numDigits) {
+  let index = 0;
+  try {
+    const response = await fetch('https://qrng.anu.edu.au/API/jsonI.php?length=' + Math.ceil(numDigits / 2) + '&type=uint8');
+    const data = await response.json();
+    if (data.success) {
+      const numbers = data.data;
+      for (let num of numbers) {
+        // Each uint8 gives two digits
+        const digit1 = Math.floor(num / 25.6); // First digit (0-9)
+        const digit2 = Math.floor((num % 25.6) / 2.56); // Second digit (0-9)
+        if (index < numDigits) {
+          yield digit1;
+          index++;
+        }
+        if (index < numDigits) {
+          yield digit2;
+          index++;
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Quantum API failed, falling back to LCG:', err);
+    // Fallback to LCG if API fails
+    for (let digit of generateLCGDigits(numDigits - index)) {
+      yield digit;
+      index++;
+    }
+  }
+}
+
+// Cellular Automaton Rule 30 digit generator
+function* generateRule30Digits(numDigits) {
+  let index = 0;
+  const width = 100; // Width of the automaton
+  let state = new Array(width).fill(0);
+  state[Math.floor(width / 2)] = 1; // Start with a single 1 in the middle
+
+  while (index < numDigits) {
+    // Apply Rule 30: left XOR (center OR right)
+    const newState = new Array(width).fill(0);
+    for (let i = 0; i < width; i++) {
+      const left = state[(i - 1 + width) % width];
+      const center = state[i];
+      const right = state[(i + 1) % width];
+      newState[i] = left ^ (center | right);
+    }
+    state = newState;
+
+    // Extract a digit from the sum of the row (mod 10)
+    const sum = state.reduce((a, b) => a + b, 0);
+    const digit = sum % 10;
+    yield digit;
+    index++;
+  }
+}
+
 function validateAndCalculate() {
   const digitsInput = parseInt(document.getElementById('digits').value);
   const calcType = document.getElementById('calcType').value;
@@ -230,37 +370,60 @@ function calculateDigits(digits, calcType) {
   let currentDigitIndex = 0;
   let updateCounter = 0;
   const updateInterval = 50;
-  const digitGenerator = calcType === 'pi' ? generatePiDigits(digits) :
-                         calcType === 'gaussian' ? generateGaussianDigits(digits) :
-                         calcType === 'perlin' ? generatePerlinDigits(digits) :
-                         generateLCGDigits(digits);
+
+  // Select the appropriate generator based on calcType
+  let digitGenerator;
+  if (calcType === 'pi') {
+    digitGenerator = generatePiDigits(digits);
+  } else if (calcType === 'gaussian') {
+    digitGenerator = generateGaussianDigits(digits);
+  } else if (calcType === 'perlin') {
+    digitGenerator = generatePerlinDigits(digits);
+  } else if (calcType === 'lcg') {
+    digitGenerator = generateLCGDigits(digits);
+  } else if (calcType === 'mersenne') {
+    digitGenerator = generateMersenneDigits(digits);
+  } else if (calcType === 'logistic') {
+    digitGenerator = generateLogisticDigits(digits);
+  } else if (calcType === 'middleSquare') {
+    digitGenerator = generateMiddleSquareDigits(digits);
+  } else if (calcType === 'xorshift') {
+    digitGenerator = generateXorshiftDigits(digits);
+  } else if (calcType === 'quantum') {
+    // Quantum generator is async, handle it differently
+    return (async () => {
+      const gen = await generateQuantumDigits(digits);
+      let digitSequence = '';
+      let result;
+      while (!(result = gen.next()).done && currentDigitIndex < digits) {
+        const digit = result.value;
+        counts[digit]++;
+        digitSequence += digit;
+        document.getElementById('liveDigit').textContent = digit;
+        document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
+        document.getElementById('digitSequence').value = digitSequence;
+
+        updateCounter++;
+        if (updateCounter >= updateInterval) {
+          const target = Math.ceil(digits / 10);
+          updateChartData(myChart, counts, target);
+          updateCounter = 0;
+        }
+
+        currentDigitIndex++;
+      }
+      finalizeCalculation(digits, digitSequence);
+    })();
+  } else if (calcType === 'rule30') {
+    digitGenerator = generateRule30Digits(digits);
+  }
+
   let digitSequence = '';
 
   function updateLoop() {
     const result = digitGenerator.next();
     if (result.done || currentDigitIndex >= digits) {
-      console.log('Final chart update');
-      const target = Math.ceil(digits / 10); // Example target: 10% of digits
-      updateChartData(myChart, counts, target);
-      document.getElementById('liveDigit').textContent = 'Done';
-      document.getElementById('progress').textContent = `Processed: ${digits}/${digits} digits`;
-      console.log('Digit sequence:', digitSequence);
-      console.log('Counts:', counts);
-      console.log('Total count:', counts.reduce((a, b) => a + b, 0));
-      sessionStorage.setItem('digitCounts', JSON.stringify(counts));
-      // Generate summary report
-      const summary = counts.map((count, index) => {
-        const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
-        return `Digit ${index}: ${tally} ${tally === 1 ? 'tally' : 'tallies'} (Count: ${count})`;
-      }).join('<br>');
-      document.getElementById('summaryReport').innerHTML = `<h2>Summary Report</h2><p>${summary}</p>`;
-      // Check guess automatically if submitted
-      if (submittedGuess !== null) {
-        checkGuess();
-      }
-      // Re-enable guess input for next calculation
-      document.getElementById('guess').disabled = false;
-      document.getElementById('submitGuess').disabled = false;
+      finalizeCalculation(digits, digitSequence);
       return;
     }
 
@@ -269,7 +432,6 @@ function calculateDigits(digits, calcType) {
     digitSequence += digit;
     document.getElementById('liveDigit').textContent = digit;
     document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
-    // Update the textbox with the current digit sequence
     document.getElementById('digitSequence').value = digitSequence;
 
     updateCounter++;
@@ -284,6 +446,31 @@ function calculateDigits(digits, calcType) {
   }
 
   requestAnimationFrame(updateLoop);
+}
+
+function finalizeCalculation(digits, digitSequence) {
+  console.log('Final chart update');
+  const target = Math.ceil(digits / 10); // Example target: 10% of digits
+  updateChartData(myChart, counts, target);
+  document.getElementById('liveDigit').textContent = 'Done';
+  document.getElementById('progress').textContent = `Processed: ${digits}/${digits} digits`;
+  console.log('Digit sequence:', digitSequence);
+  console.log('Counts:', counts);
+  console.log('Total count:', counts.reduce((a, b) => a + b, 0));
+  sessionStorage.setItem('digitCounts', JSON.stringify(counts));
+  // Generate summary report
+  const summary = counts.map((count, index) => {
+    const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
+    return `Digit ${index}: ${tally} ${tally === 1 ? 'tally' : 'tallies'} (Count: ${count})`;
+  }).join('<br>');
+  document.getElementById('summaryReport').innerHTML = `<h2>Summary Report</h2><p>${summary}</p>`;
+  // Check guess automatically if submitted
+  if (submittedGuess !== null) {
+    checkGuess();
+  }
+  // Re-enable guess input for next calculation
+  document.getElementById('guess').disabled = false;
+  document.getElementById('submitGuess').disabled = false;
 }
 
 function checkGuess() {
