@@ -20,11 +20,20 @@ button {
   margin-top: 10px;
   transition: none;
 }
-#digitChart {
+.chart-container {
   margin-top: 20px;
+  width: 800px;
   height: 400px;
-  width: 100%;
+  position: relative;
   transition: none;
+}
+#digitChart, #hiddenChart {
+  width: 800px !important;
+  height: 400px !important;
+  transition: none;
+}
+#hiddenChart {
+  display: none;
 }
 #guessSection {
   margin-top: 20px;
@@ -32,4 +41,7 @@ button {
 }
 canvas {
   transition: none !important;
+  position: absolute;
+  top: 0;
+  left: 0;
 }

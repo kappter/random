@@ -1,4 +1,5 @@
 let myChart;
+let hiddenChart;
 let counts = new Array(10).fill(0);
 
 // Vibrant color palette for digits 0-9
@@ -16,23 +17,23 @@ const digitColors = [
 ];
 const digitBorderColors = digitColors.map(color => color.replace('rgb', 'rgba').replace(')', ', 0.8)'));
 
-function initializeChart() {
-  console.log('Initializing chart');
-  const ctx = document.getElementById('digitChart').getContext('2d');
-  myChart = new Chart(ctx, {
+function initializeChart(canvasId, isHidden = false) {
+  console.log(`Initializing ${isHidden ? 'hidden' : 'visible'} chart`);
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const chart = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
       datasets: [{
         label: 'Digit Counts',
-        data: counts,
+        data: new Array(10).fill(0),
         backgroundColor: digitColors,
         borderColor: digitBorderColors,
         borderWidth: 1
       }]
     },
     options: {
-      responsive: true,
+      responsive: false, // Fixed size to prevent resizing
       maintainAspectRatio: false,
       scales: {
         y: {
@@ -64,10 +65,26 @@ function initializeChart() {
         }
       },
       animation: {
-        duration: 0 // Disable animations for instant updates
+        duration: 0 // Disable animations
       }
     }
   });
+  return chart;
+}
+
+function updateChartData(chart, data, target) {
+  console.log('Updating chart data');
+  const firstToTarget = data.map((count, index) => ({ digit: index, count }))
+    .find(d => d.count >= target)?.digit;
+  chart.data.datasets[0].backgroundColor = data.map((_, i) => 
+    i === firstToTarget ? 'rgb(255, 0, 0)' : digitColors[i]
+  );
+  chart.data.datasets[0].borderColor = data.map((_, i) => 
+    i === firstToTarget ? 'rgb(200, 0, 0)' : digitBorderColors[i]
+  );
+  chart.data.datasets[0].data = [...data];
+  chart.options.scales.y.suggestedMax = Math.max(...data, 1) * 1.2;
+  chart.update();
 }
 
 // Pi digit generator (precomputed array)
@@ -146,7 +163,10 @@ function validateAndCalculate() {
 
 function calculateDigits(digits, calcType) {
   counts = new Array(10).fill(0);
-  if (!myChart) initializeChart();
+  if (!myChart) {
+    myChart = initializeChart('digitChart');
+    hiddenChart = initializeChart('hiddenChart', true);
+  }
   document.getElementById('liveDigit').textContent = 'Calculating...';
   document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
   document.getElementById('guessSection').style.display = 'block';
@@ -159,19 +179,15 @@ function calculateDigits(digits, calcType) {
   function updateLoop() {
     const result = digitGenerator.next();
     if (result.done || currentDigitIndex >= digits) {
-      // Single chart update at the end
-      console.log('Updating chart at end');
+      // Update hidden chart, then copy to visible chart
+      console.log('Final chart update');
       const target = parseInt(document.getElementById('targetCount')?.value) || 500;
-      const firstToTarget = counts.map((count, index) => ({ digit: index, count }))
-        .find(d => d.count >= target)?.digit;
-      myChart.data.datasets[0].backgroundColor = counts.map((_, i) => 
-        i === firstToTarget ? 'rgb(255, 0, 0)' : digitColors[i]
-      );
-      myChart.data.datasets[0].borderColor = counts.map((_, i) => 
-        i === firstToTarget ? 'rgb(200, 0, 0)' : digitBorderColors[i]
-      );
+      updateChartData(hiddenChart, counts, target);
+      // Copy hidden canvas to visible canvas
       myChart.data.datasets[0].data = [...counts];
-      myChart.options.scales.y.suggestedMax = Math.max(...counts, 1) * 1.2;
+      myChart.data.datasets[0].backgroundColor = hiddenChart.data.datasets[0].backgroundColor;
+      myChart.data.datasets[0].borderColor = hiddenChart.data.datasets[0].borderColor;
+      myChart.options.scales.y.suggestedMax = hiddenChart.options.scales.y.suggestedMax;
       myChart.update();
       document.getElementById('liveDigit').textContent = 'Done';
       document.getElementById('progress').textContent = `Processed: ${digits}/${digits} digits`;
