@@ -42,19 +42,19 @@ function initializeChart() {
       plugins: {
         datalabels: {
           display: true, // Always show labels
-          anchor: 'end',
-          align: 'top',
-          offset: 5,
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          borderRadius: 4,
-          padding: 6,
-          formatter: (value) => {
+          anchor: 'center',
+          align: 'center',
+          offset: 0,
+          formatter: (value, context) => {
             const tally = Math.floor(value / 5) + (value % 5 > 0 ? 1 : 0);
-            return `Count: ${value}\nTally: ${tally}`;
+            return `${tally}`; // Superimposed tally
           },
-          color: '#000',
-          font: { weight: 'bold', size: 14 },
+          color: '#fff',
+          font: { weight: 'bold', size: 16 },
           textAlign: 'center'
+        },
+        annotation: {
+          annotations: []
         }
       },
       animation: {
@@ -68,19 +68,37 @@ function initializeChart() {
 
 function updateChartData(chart, data, target) {
   console.log('Updating chart data with counts:', data);
-  // Find the digit with the highest count at the end of calculation
+  // Find all digits with the highest count for highlighting
   const maxCount = Math.max(...data);
-  const winningDigit = data.findIndex(count => count === maxCount);
+  const winningDigits = data.reduce((winners, count, index) => {
+    if (count === maxCount) winners.push(index);
+    return winners;
+  }, []);
 
-  // Update colors: dark red for the winner, original colors for others
+  // Update colors: dark red for all winners, original colors for others
   chart.data.datasets[0].backgroundColor = data.map((_, i) => 
-    i === winningDigit ? 'rgb(139, 0, 0)' : digitColors[i]
+    winningDigits.includes(i) ? 'rgb(139, 0, 0)' : digitColors[i]
   );
   chart.data.datasets[0].borderColor = data.map((_, i) => 
-    i === winningDigit ? 'rgba(139, 0, 0, 0.8)' : digitBorderColors[i]
+    winningDigits.includes(i) ? 'rgba(139, 0, 0, 0.8)' : digitBorderColors[i]
   );
   chart.data.datasets[0].data = [...data];
   chart.options.scales.y.suggestedMax = Math.max(...data, 1) * 1.2;
+
+  // Add count labels as a secondary annotation (superimposed above tally)
+  chart.options.plugins.annotation.annotations = data.map((value, index) => ({
+    type: 'label',
+    xValue: index,
+    yValue: value + 5, // Offset above the bar
+    content: [`Count: ${value}`],
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 4,
+    padding: 6,
+    color: '#000',
+    font: { weight: 'bold', size: 14 },
+    textAlign: 'center'
+  }));
+
   chart.update();
 }
 
