@@ -1,10 +1,12 @@
 let myChart;
+let animationStep = 0;
 
 function calculatePi() {
   const digits = parseInt(document.getElementById('digits').value);
   let pi = '';
   let q = 1, r = 0, t = 1, k = 1, n = 3, l = 3;
   document.getElementById('piResult').textContent = 'Calculating...';
+  animationStep = 0;
   const interval = setInterval(() => {
     if (4 * q + r - t < n * t) {
       pi += n;
@@ -37,6 +39,9 @@ function updateDigitCounts(pi) {
 
 function updateChart(counts) {
   const ctx = document.getElementById('digitChart').getContext('2d');
+  const maxCount = Math.max(...counts, 1);
+  const animatedCounts = counts.map(count => (count * animationStep) / 50);
+
   if (myChart) myChart.destroy();
   myChart = new Chart(ctx, {
     type: 'bar',
@@ -44,16 +49,57 @@ function updateChart(counts) {
       labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
       datasets: [{
         label: 'Digit Counts',
-        data: counts,
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        borderColor: 'rgba(75, 192, 192, 1)',
+        data: animatedCounts,
+        backgroundColor: counts.map((_, i) => `hsl(${i * 36}, 70%, 50%)`),
+        borderColor: counts.map((_, i) => `hsl(${i * 36}, 70%, 40%)`),
         borderWidth: 1
       }]
     },
     options: {
-      scales: { y: { beginAtZero: true } },
-      animation: false
-    }
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: maxCount * 1.2,
+          title: { display: true, text: 'Count' }
+        },
+        x: {
+          title: { display: true, text: 'Digits' }
+        }
+      },
+      plugins: {
+        datalabels: {
+          anchor: 'end',
+          align: 'top',
+          formatter: (value, context) => {
+            const count = counts[context.dataIndex];
+            return count.toString();
+          },
+          color: '#000',
+          font: { weight: 'bold' }
+        }
+      },
+      animation: {
+        duration: 100,
+        onProgress: () => animationStep++,
+        onComplete: () => animationStep = 50
+      }
+    },
+    plugins: [{
+      afterDatasetsDraw: chart => {
+        const ctx = chart.ctx;
+        chart.data.datasets[0].data.forEach((value, index) => {
+          const meta = chart.getDatasetMeta(0);
+          const x = meta.data[index].x;
+          const y = meta.data[index].y;
+          const count = counts[index];
+          const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
+          ctx.fillStyle = '#000';
+          ctx.font = '12px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(`Tally: ${tally}`, x, y - 20);
+        });
+      }
+    }]
   });
 }
 
