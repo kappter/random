@@ -16,3 +16,7 @@ button {
 #piResult, #guessResult {
   margin-top: 10px;
 }
+#digitChart {
+  margin-top: 20px;
+  height: 300px;
+}

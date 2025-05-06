@@ -1,8 +1,11 @@
+let myChart;
+
 function calculatePi() {
   const digits = parseInt(document.getElementById('digits').value);
   let pi = '';
   let q = 1, r = 0, t = 1, k = 1, n = 3, l = 3;
-  for (let i = 0; i < digits; i++) {
+  document.getElementById('piResult').textContent = 'Calculating...';
+  const interval = setInterval(() => {
     if (4 * q + r - t < n * t) {
       pi += n;
       const nr = 10 * (r - n * t);
@@ -19,15 +22,39 @@ function calculatePi() {
       n = nn;
       r = nr;
     }
-  }
-  document.getElementById('piResult').textContent = 'Pi digits: ' + pi;
-  updateDigitCounts(pi);
+    document.getElementById('piResult').textContent = 'Pi digits: ' + pi;
+    updateDigitCounts(pi);
+    if (pi.length >= digits) clearInterval(interval);
+  }, 10);
 }
 
 function updateDigitCounts(pi) {
   const counts = new Array(10).fill(0);
   for (let digit of pi) counts[parseInt(digit)]++;
   sessionStorage.setItem('piDigitCounts', JSON.stringify(counts));
+  updateChart(counts);
+}
+
+function updateChart(counts) {
+  const ctx = document.getElementById('digitChart').getContext('2d');
+  if (myChart) myChart.destroy();
+  myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+      datasets: [{
+        label: 'Digit Counts',
+        data: counts,
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: { y: { beginAtZero: true } },
+      animation: false
+    }
+  });
 }
 
 function checkGuess() {
