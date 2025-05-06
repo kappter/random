@@ -17,6 +17,7 @@ const digitColors = [
 const digitBorderColors = digitColors.map(color => color.replace('rgb', 'rgba').replace(')', ', 0.8)'));
 
 function initializeChart() {
+  console.log('Initializing chart');
   const ctx = document.getElementById('digitChart').getContext('2d');
   myChart = new Chart(ctx, {
     type: 'bar',
@@ -155,11 +156,11 @@ function calculateDigits(digits, calcType) {
                          generatePerlinDigits(digits);
   let digitSequence = '';
 
-  const interval = setInterval(() => {
+  function updateLoop() {
     const result = digitGenerator.next();
     if (result.done || currentDigitIndex >= digits) {
-      clearInterval(interval);
       // Single chart update at the end
+      console.log('Updating chart at end');
       const target = parseInt(document.getElementById('targetCount')?.value) || 500;
       const firstToTarget = counts.map((count, index) => ({ digit: index, count }))
         .find(d => d.count >= target)?.digit;
@@ -188,7 +189,10 @@ function calculateDigits(digits, calcType) {
     document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
     
     currentDigitIndex++;
-  }, 50);
+    requestAnimationFrame(updateLoop);
+  }
+
+  requestAnimationFrame(updateLoop);
 }
 
 function checkGuess() {

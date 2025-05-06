@@ -1,10 +1,12 @@
 body {
   font-family: Arial, sans-serif;
   margin: 20px;
+  transition: none;
 }
 #app {
   max-width: 800px;
   margin: 0 auto;
+  transition: none;
 }
 label {
   margin-right: 10px;
@@ -12,14 +14,22 @@ label {
 button {
   margin-left: 10px;
   padding: 5px 10px;
+  transition: none;
 }
 #liveDigit, #progress, #guessResult {
   margin-top: 10px;
+  transition: none;
 }
 #digitChart {
   margin-top: 20px;
   height: 400px;
+  width: 100%;
+  transition: none;
 }
 #guessSection {
   margin-top: 20px;
+  transition: none;
+}
+canvas {
+  transition: none !important;
 }
