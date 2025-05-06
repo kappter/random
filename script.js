@@ -1,11 +1,59 @@
 let myChart;
 let counts = new Array(10).fill(0);
 
+function initializeChart() {
+  const ctx = document.getElementById('digitChart').getContext('2d');
+  myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+      datasets: [{
+        label: 'Digit Counts',
+        data: counts,
+        backgroundColor: counts.map((_, i) => 'rgb(150, 150, 150)'),
+        borderColor: counts.map((_, i) => 'rgb(100, 100, 100)'),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Count' },
+          ticks: { stepSize: 100 }
+        },
+        x: {
+          title: { display: true, text: 'Digits' }
+        }
+      },
+      plugins: {
+        datalabels: {
+          anchor: 'end',
+          align: 'top',
+          formatter: (value, context) => {
+            const count = counts[context.dataIndex];
+            const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
+            return `Tally: ${tally}`;
+          },
+          color: '#000',
+          font: { weight: 'bold', size: 12 }
+        }
+      },
+      animation: {
+        duration: 100, // Minimal animation for smooth updates
+        easing: 'linear'
+      }
+    }
+  });
+}
+
 function calculatePi() {
   const digits = parseInt(document.getElementById('digits').value);
   let q = 1, r = 0, t = 1, k = 1, n = 3, l = 3;
   counts = new Array(10).fill(0);
-  updateChart(counts);
+  if (!myChart) initializeChart();
+  myChart.data.datasets[0].data = counts;
+  myChart.update();
   document.getElementById('liveDigit').textContent = 'Calculating...';
   document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
   document.getElementById('guessSection').style.display = 'block';
@@ -15,9 +63,21 @@ function calculatePi() {
     if (4 * q + r - t < n * t) {
       const digit = n;
       counts[digit]++;
-      document.getElementById('liveDigit').textContent = `Current digit: ${digit}`;
+      document.getElementById('liveDigit').textContent = digit;
       document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
-      updateChart(counts);
+      
+      // Update chart colors for the first digit to reach target
+      const target = parseInt(document.getElementById('targetCount')?.value) || 500;
+      const firstToTarget = counts.map((count, index) => ({ digit: index, count }))
+        .find(d => d.count >= target)?.digit;
+      myChart.data.datasets[0].backgroundColor = counts.map((_, i) => i === firstToTarget ? 'rgb(255, 0, 0)' : 'rgb(150, 150, 150)');
+      myChart.data.datasets[0].borderColor = counts.map((_, i) => i === firstToTarget ? 'rgb(200, 0, 0)' : 'rgb(100, 100, 100)');
+      
+      // Update chart data and refresh
+      myChart.data.datasets[0].data = counts;
+      myChart.options.scales.y.max = Math.max(...counts, 1) * 1.2;
+      myChart.update();
+      
       const nr = 10 * (r - n * t);
       n = ((10 * (3 * q + r)) / t) - (10 * n);
       q *= 10;
@@ -35,79 +95,11 @@ function calculatePi() {
     currentDigitIndex++;
     if (currentDigitIndex >= digits) {
       clearInterval(interval);
-      document.getElementById('liveDigit').textContent = 'Calculation complete.';
+      document.getElementById('liveDigit').textContent = 'Done';
       document.getElementById('progress').textContent = `Processed: ${digits}/${digits} digits`;
       sessionStorage.setItem('piDigitCounts', JSON.stringify(counts));
     }
   }, 50);
-}
-
-function updateChart(counts) {
-  const ctx = document.getElementById('digitChart').getContext('2d');
-  const maxCount = Math.max(...counts, 1);
-  const target = parseInt(document.getElementById('targetCount')?.value) || 500;
-  const firstToTarget = counts.map((count, index) => ({ digit: index, count }))
-    .find(d => d.count >= target)?.digit;
-
-  if (myChart) myChart.destroy();
-  myChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
-      datasets: [{
-        label: 'Digit Counts',
-        data: counts, // Data grows upward
-        backgroundColor: counts.map((_, i) => i === firstToTarget ? 'rgb(255, 0, 0)' : 'rgb(150, 150, 150)'),
-        borderColor: counts.map((_, i) => i === firstToTarget ? 'rgb(200, 0, 0)' : 'rgb(100, 100, 100)'),
-        borderWidth: 1
-      }]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: maxCount * 1.2,
-          title: { display: true, text: 'Count' },
-          ticks: { stepSize: 100 }
-        },
-        x: {
-          title: { display: true, text: 'Digits' }
-        }
-      },
-      plugins: {
-        datalabels: {
-          anchor: 'end',
-          align: 'top',
-          formatter: (value, context) => {
-            const count = counts[context.dataIndex];
-            return `${context.chart.data.labels[context.dataIndex]}=${count}`;
-          },
-          color: '#000',
-          font: { weight: 'bold', size: 12 }
-        }
-      },
-      animation: {
-        duration: 300,
-        easing: 'linear'
-      }
-    },
-    plugins: [{
-      afterDatasetsDraw: chart => {
-        const ctx = chart.ctx;
-        chart.data.datasets[0].data.forEach((value, index) => {
-          const meta = chart.getDatasetMeta(0);
-          const x = meta.data[index].x;
-          const y = meta.data[index].y;
-          const count = counts[index];
-          const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
-          ctx.fillStyle = '#000';
-          ctx.font = '12px Arial';
-          ctx.textAlign = 'center';
-          ctx.fillText(`Tally: ${tally}`, x, y - 35);
-        });
-      }
-    }]
-  });
 }
 
 function checkGuess() {
