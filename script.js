@@ -49,22 +49,21 @@ function initializeChart() {
           anchor: 'end',
           align: 'top',
           offset: 5,
-          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
           borderRadius: 4,
-          padding: 4,
+          padding: 6,
           formatter: (value, context) => {
             const count = counts[context.dataIndex];
             const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
             return `Tally: ${tally}`;
           },
           color: '#000',
-          font: { weight: 'bold', size: 12 },
+          font: { weight: 'bold', size: 14 },
           textAlign: 'center'
         }
       },
       animation: {
-        duration: 100,
-        easing: 'linear'
+        duration: 0 // Disable animations for instant updates
       }
     }
   });
@@ -76,7 +75,7 @@ function* generatePiDigits(numDigits) {
     3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3, 2, 3, 8, 4,
     6, 2, 6, 4, 3, 3, 8, 3, 2, 7, 9, 5, 0, 2, 8, 8, 4, 1, 9, 7,
     1, 6, 9, 3, 9, 9, 3, 7, 5, 1, 0, 5, 8, 2, 0, 9, 7, 4, 9, 4,
-    4, 5, 9, 2, 3 DMSO, 7, 8, 1, 6, 4, 0, 6, 2, 8, 6, 2, 0, 8, 9,
+    4, 5, 9, 2, 3, 0, 7, 8, 1, 6, 4, 0, 6, 2, 8, 6, 2, 0, 8, 9,
     9, 8, 6, 2, 8, 0, 3, 4, 8, 2, 5, 3, 4, 2, 1, 1, 7, 0, 6, 7
   ];
   let index = 0;
@@ -91,13 +90,10 @@ function* generatePiDigits(numDigits) {
 function* generateGaussianDigits(numDigits) {
   let index = 0;
   while (index < numDigits) {
-    // Box-Muller transform for standard normal distribution
     const u1 = Math.random();
     const u2 = Math.random();
     const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-    // Map to digits 0-9 (mean=4.5, std=1.5 for reasonable spread)
     const digit = Math.round(4.5 + 1.5 * z);
-    // Clamp to 0-9
     const clampedDigit = Math.max(0, Math.min(9, digit));
     yield clampedDigit;
     index++;
@@ -107,7 +103,6 @@ function* generateGaussianDigits(numDigits) {
 // Perlin noise implementation
 function perlinNoise(x, seed = 0) {
   const perm = Array(256).fill(0).map((_, i) => i);
-  // Shuffle permutation array with seed
   for (let i = 255; i > 0; i--) {
     const j = Math.floor((seed + i) % (i + 1));
     [perm[i], perm[j]] = [perm[j], perm[i]];
@@ -117,12 +112,12 @@ function perlinNoise(x, seed = 0) {
 
   const xi = Math.floor(x) & 255;
   const xf = x - Math.floor(x);
-  const u = xf * xf * (3 - 2 * xf); // Fade function
+  const u = xf * xf * (3 - 2 * xf);
   const a = p[xi];
   const b = p[xi + 1];
   const g1 = (p[a] % 2 ? -1 : 1) * (p[a] % 100) / 100;
   const g2 = (p[b] % 2 ? -1 : 1) * (p[b] % 100) / 100;
-  return g1 + u * (g2 - g1); // Linear interpolation
+  return g1 + u * (g2 - g1);
 }
 
 // Perlin digit generator
@@ -130,9 +125,7 @@ function* generatePerlinDigits(numDigits) {
   let index = 0;
   const seed = Math.random() * 1000;
   while (index < numDigits) {
-    // Generate Perlin noise value at position index * 0.1 for smooth transitions
     const noise = perlinNoise(index * 0.1, seed);
-    // Map noise (-1 to 1) to digits 0-9
     const digit = Math.floor(((noise + 1) / 2) * 10);
     const clampedDigit = Math.max(0, Math.min(9, digit));
     yield clampedDigit;
