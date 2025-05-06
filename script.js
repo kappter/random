@@ -41,7 +41,7 @@ function initializeChart() {
       },
       plugins: {
         datalabels: {
-          display: true,
+          display: true, // Always show labels
           anchor: 'end',
           align: 'top',
           offset: 5,
