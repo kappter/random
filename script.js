@@ -126,7 +126,7 @@ function perlinNoise(x, seed = 0) {
     [perm[i], perm[j]] = [perm[j], perm[i]];
   }
   const p = new Uint8Array(512);
-  for (let i = 0; i < 512; i++) p[i] = perm[i % 256];
+  for (let i = 0; I < 512; i++) p[i] = perm[i % 256];
 
   const xi = Math.floor(x) & 255;
   const xf = x - Math.floor(x);
@@ -172,10 +172,6 @@ function validateAndCalculate() {
   const calcType = document.getElementById('calcType').value;
   if (isNaN(digitsInput) || digitsInput < 100 || digitsInput > 10000) {
     alert('Please enter a number between 100 and 10000.');
-    return;
-  }
-  if (submittedGuess === null) {
-    alert('Please submit a guess before calculating.');
     return;
   }
   calculateDigits(digitsInput, calcType);
@@ -230,8 +226,10 @@ function calculateDigits(digits, calcType) {
         return `Digit ${index}: ${tally} ${tally === 1 ? 'tally' : 'tallies'} (Count: ${count})`;
       }).join('<br>');
       document.getElementById('summaryReport').innerHTML = `<h2>Summary Report</h2><p>${summary}</p>`;
-      // Check guess automatically
-      checkGuess();
+      // Check guess automatically if submitted
+      if (submittedGuess !== null) {
+        checkGuess();
+      }
       // Re-enable guess input for next calculation
       document.getElementById('guess').disabled = false;
       document.getElementById('submitGuess').disabled = false;
