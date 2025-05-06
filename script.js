@@ -1,19 +1,12 @@
 let myChart;
 let counts = new Array(10).fill(0);
 
-// Vibrant color palette for digits 0-9
-const digitColors = [
-  'rgb(31, 119, 180)',   // 0: Blue
-  'rgb(255, 127, 14)',   // 1: Orange
-  'rgb(44, 160, 44)',    // 2: Green
-  'rgb(214, 39, 40)',    // 3: Red
-  'rgb(148, 103, 189)',  // 4: Purple
-  'rgb(140, 86, 75)',    // 5: Brown
-  'rgb(227, 119, 194)',  // 6: Pink
-  'rgb(127, 127, 127)',  // 7: Gray
-  'rgb(188, 189, 34)',   // 8: Olive
-  'rgb(23, 190, 207)'    // 9: Cyan
-];
+// Monochromatic color palette: deep dark blue (0, 0, 139) to lighter shades
+const baseBlue = [0, 0, 139]; // Deep dark blue
+const digitColors = Array.from({ length: 10 }, (_, i) => {
+  const lightness = i * 20; // Increase lightness incrementally
+  return `rgb(${Math.min(baseBlue[0] + lightness, 255)}, ${Math.min(baseBlue[1] + lightness, 255)}, ${baseBlue[2] + lightness})`;
+});
 const digitBorderColors = digitColors.map(color => color.replace('rgb', 'rgba').replace(')', ', 0.8)'));
 
 function initializeChart() {
@@ -32,7 +25,7 @@ function initializeChart() {
       }]
     },
     options: {
-      responsive: false, // Fixed size to prevent resizing
+      responsive: false,
       maintainAspectRatio: false,
       scales: {
         y: {
@@ -64,8 +57,8 @@ function initializeChart() {
         }
       },
       animation: {
-        duration: 200, // Smooth transition duration in milliseconds
-        easing: 'easeInOutQuad' // Smooth easing function
+        duration: 200,
+        easing: 'easeInOutQuad'
       }
     }
   });
@@ -171,7 +164,7 @@ function calculateDigits(digits, calcType) {
   document.getElementById('guessSection').style.display = 'block';
   let currentDigitIndex = 0;
   let updateCounter = 0;
-  const updateInterval = 50; // Update chart every 50 digits
+  const updateInterval = 50;
   const digitGenerator = calcType === 'pi' ? generatePiDigits(digits) :
                          calcType === 'gaussian' ? generateGaussianDigits(digits) :
                          generatePerlinDigits(digits);
@@ -180,7 +173,6 @@ function calculateDigits(digits, calcType) {
   function updateLoop() {
     const result = digitGenerator.next();
     if (result.done || currentDigitIndex >= digits) {
-      // Final chart update
       console.log('Final chart update');
       const target = parseInt(document.getElementById('targetCount')?.value) || 500;
       updateChartData(myChart, counts, target);
@@ -199,7 +191,6 @@ function calculateDigits(digits, calcType) {
     document.getElementById('liveDigit').textContent = digit;
     document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
 
-    // Update chart every 'updateInterval' digits
     updateCounter++;
     if (updateCounter >= updateInterval) {
       const target = parseInt(document.getElementById('targetCount')?.value) || 500;
