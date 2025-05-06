@@ -235,14 +235,20 @@ function* generateLogisticDigits(numDigits) {
   }
 }
 
-// Middle-Square Method digit generator
+// Middle-Square Method digit generator (with cycle detection)
 function* generateMiddleSquareDigits(numDigits) {
   let index = 0;
   let seed = (Date.now() % 9000) + 1000; // 4-digit seed
+  const seen = new Set();
   while (index < numDigits) {
     const squared = seed * seed;
     const squaredStr = squared.toString().padStart(8, '0');
     seed = parseInt(squaredStr.slice(2, 6)); // Take middle 4 digits
+    if (seed === 0 || seen.has(seed)) {
+      seed = (Date.now() % 9000) + 1000; // Reseed if cycle detected
+      seen.clear();
+    }
+    seen.add(seed);
     const digit = Math.floor((seed / 10000) * 10); // Map to 0-9
     yield digit;
     index++;
