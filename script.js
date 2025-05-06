@@ -45,8 +45,9 @@ function calculatePi() {
 function updateChart(counts) {
   const ctx = document.getElementById('digitChart').getContext('2d');
   const maxCount = Math.max(...counts, 1);
-  const firstTo500 = counts.map((count, index) => ({ digit: index, count }))
-    .find(d => d.count >= 500)?.digit;
+  const target = parseInt(document.getElementById('targetCount')?.value) || 500;
+  const firstToTarget = counts.map((count, index) => ({ digit: index, count }))
+    .find(d => d.count >= target)?.digit;
 
   if (myChart) myChart.destroy();
   myChart = new Chart(ctx, {
@@ -55,30 +56,32 @@ function updateChart(counts) {
       labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
       datasets: [{
         label: 'Digit Counts',
-        data: counts,
-        backgroundColor: counts.map((_, i) => i === firstTo500 ? 'rgb(255, 0, 0)' : 'rgb(150, 150, 150)'),
-        borderColor: counts.map((_, i) => i === firstTo500 ? 'rgb(200, 0, 0)' : 'rgb(100, 100, 100)'),
+        data: counts.map(count => maxCount - count), // Invert data for downward growth
+        backgroundColor: counts.map((_, i) => i === firstToTarget ? 'rgb(255, 0, 0)' : 'rgb(150, 150, 150)'),
+        borderColor: counts.map((_, i) => i === firstToTarget ? 'rgb(200, 0, 0)' : 'rgb(100, 100, 100)'),
         borderWidth: 1
       }]
     },
     options: {
+      indexAxis: 'y', // Vertical bars
       scales: {
-        y: {
+        x: {
+          reverse: true, // Invert x-axis to match downward growth
           beginAtZero: true,
           max: maxCount * 1.2,
           title: { display: true, text: 'Count' },
           ticks: { stepSize: 100 }
         },
-        x: {
+        y: {
           title: { display: true, text: 'Digits' }
         }
       },
       plugins: {
         datalabels: {
-          anchor: 'end',
+          anchor: 'start',
           align: 'top',
           formatter: (value, context) => {
-            const count = counts[context.dataIndex];
+            const count = maxCount - value; // Adjust for inverted data
             return `${context.chart.data.labels[context.dataIndex]}=${count}`;
           },
           color: '#000',
@@ -97,12 +100,12 @@ function updateChart(counts) {
           const meta = chart.getDatasetMeta(0);
           const x = meta.data[index].x;
           const y = meta.data[index].y;
-          const count = counts[index];
+          const count = maxCount - value; // Adjust for inverted data
           const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
           ctx.fillStyle = '#000';
           ctx.font = '12px Arial';
           ctx.textAlign = 'center';
-          ctx.fillText(`Tally: ${tally}`, x, y - 35);
+          ctx.fillText(`Tally: ${tally}`, x, y - 10);
         });
       }
     }]
