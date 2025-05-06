@@ -47,23 +47,23 @@ function initializeChart() {
   });
 }
 
-// Simplified Pi digit generator using a precomputed sequence for reliability
 function* generatePiDigits(numDigits) {
-  // First few digits of Pi for validation: 3.1415926535...
   const piDigits = [
-    3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3, 2, 3, 8, 4, 
-    6, 2, 6, 4, 3, 3, 8, 3, 2, 7, 9, 5, 0, 2, 8, 8, 4, 1, 9, 7, 
-    1, 6, 9, 3, 9, 9, 3, 7, 5, 1, 0, 5, 8, 2, 0, 9, 7, 4, 9, 4, 
-    4, 5, 9, 2, 3, 0, 7, 8, 1, 6, 4, 0, 6, 2, 8, 6, 2, 0, 8, 9, 
+    3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3, 2, 3, 8, 4,
+    6, 2, 6, 4, 3, 3, 8, 3, 2, 7, 9, 5, 0, 2, 8, 8, 4, 1, 9, 7,
+    1, 6, 9, 3, 9, 9, 3, 7, 5, 1, 0, 5, 8, 2, 0, 9, 7, 4, 9, 4,
+    4, 5, 9, 2, 3, 0, 7, 8, 1, 6, 4, 0, 6, 2, 8, 6, 2, 0, 8, 9,
     9, 8, 6, 2, 8, 0, 3, 4, 8, 2, 5, 3, 4, 2, 1, 1, 7, 0, 6, 7
   ];
   let index = 0;
-  
-  // Yield the known digits up to numDigits
+  console.log('Starting generator for', numDigits, 'digits');
   while (index < numDigits) {
-    yield piDigits[index % piDigits.length]; // Loop through known digits if needed
+    const digit = piDigits[index % piDigits.length];
+    console.log('Yielding digit:', digit, 'at index:', index);
+    yield digit;
     index++;
   }
+  console.log('Generator completed');
 }
 
 function validateAndCalculate() {
@@ -86,8 +86,8 @@ function calculatePi(digits) {
   let piDigits = '';
 
   const interval = setInterval(() => {
-    const { value: digit, done } = piDigitGenerator.next();
-    if (done || currentDigitIndex >= digits) {
+    const result = piDigitGenerator.next();
+    if (result.done || currentDigitIndex >= digits) {
       clearInterval(interval);
       document.getElementById('liveDigit').textContent = 'Done';
       document.getElementById('progress').textContent = `Processed: ${digits}/${digits} digits`;
@@ -98,6 +98,7 @@ function calculatePi(digits) {
       return;
     }
 
+    const digit = result.value;
     counts[digit]++;
     piDigits += digit;
     document.getElementById('liveDigit').textContent = digit;

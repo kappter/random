@@ -49,9 +49,9 @@
   <div id="app">
     <h1>Live Pi Calculator</h1>
     <div>
-      <label for="digits">Number of digits to calculate:</label>
-      <input type="number" id="digits" min="100" value="1000">
-      <button onclick="calculatePi()">Start Calculation</button>
+      <label for="digits">Number of digits to calculate (100-10000):</label>
+      <input type="number" id="digits" min="100" max="10000" value="1000">
+      <button onclick="validateAndCalculate()">Start Calculation</button>
     </div>
     <div id="liveDigit">Waiting...</div>
     <div id="progress">Processed: 0/0 digits</div>
