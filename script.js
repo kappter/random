@@ -105,7 +105,7 @@ function* generatePiDigits(numDigits) {
 }
 
 // Gaussian digit generator (Box-Muller transform)
-function* generateGaussianDigits(numDigits) {
+function* generate GaussianDigits(numDigits) {
   let index = 0;
   while (index < numDigits) {
     const u1 = Math.random();
@@ -126,7 +126,7 @@ function perlinNoise(x, seed = 0) {
     [perm[i], perm[j]] = [perm[j], perm[i]];
   }
   const p = new Uint8Array(512);
-  for (let i = 0; I < 512; i++) p[i] = perm[i % 256];
+  for (let i = 0; i < 512; i++) p[i] = perm[i % 256];
 
   const xi = Math.floor(x) & 255;
   const xf = x - Math.floor(x);
