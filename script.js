@@ -42,6 +42,9 @@ function updateChart(counts) {
   const maxCount = Math.max(...counts, 1);
   const animatedCounts = counts.map(count => (count * animationStep) / 50);
 
+  const firstTo500 = counts.map((count, index) => ({ digit: index, count }))
+    .find(d => d.count >= 500)?.digit;
+
   if (myChart) myChart.destroy();
   myChart = new Chart(ctx, {
     type: 'bar',
@@ -50,8 +53,8 @@ function updateChart(counts) {
       datasets: [{
         label: 'Digit Counts',
         data: animatedCounts,
-        backgroundColor: counts.map((_, i) => `hsl(${i * 36}, 70%, 50%)`),
-        borderColor: counts.map((_, i) => `hsl(${i * 36}, 70%, 40%)`),
+        backgroundColor: counts.map((_, i) => i === firstTo500 ? 'rgb(255, 0, 0)' : 'rgb(150, 150, 150)'),
+        borderColor: counts.map((_, i) => i === firstTo500 ? 'rgb(200, 0, 0)' : 'rgb(100, 100, 100)'),
         borderWidth: 1
       }]
     },
@@ -60,7 +63,8 @@ function updateChart(counts) {
         y: {
           beginAtZero: true,
           max: maxCount * 1.2,
-          title: { display: true, text: 'Count' }
+          title: { display: true, text: 'Count' },
+          ticks: { stepSize: 100 }
         },
         x: {
           title: { display: true, text: 'Digits' }
@@ -72,10 +76,10 @@ function updateChart(counts) {
           align: 'top',
           formatter: (value, context) => {
             const count = counts[context.dataIndex];
-            return count.toString();
+            return `${context.chart.data.labels[context.dataIndex]}=${count}`;
           },
           color: '#000',
-          font: { weight: 'bold' }
+          font: { weight: 'bold', size: 12 }
         }
       },
       animation: {
@@ -96,7 +100,7 @@ function updateChart(counts) {
           ctx.fillStyle = '#000';
           ctx.font = '12px Arial';
           ctx.textAlign = 'center';
-          ctx.fillText(`Tally: ${tally}`, x, y - 20);
+          ctx.fillText(`Tally: ${tally}`, x, y - 35);
         });
       }
     }]
