@@ -1,15 +1,22 @@
 let myChart;
-let animationStep = 0;
+let counts = new Array(10).fill(0);
 
 function calculatePi() {
   const digits = parseInt(document.getElementById('digits').value);
   let pi = '';
   let q = 1, r = 0, t = 1, k = 1, n = 3, l = 3;
+  counts = new Array(10).fill(0);
+  updateChart(counts);
   document.getElementById('piResult').textContent = 'Calculating...';
-  animationStep = 0;
+  let currentDigitIndex = 0;
+
   const interval = setInterval(() => {
     if (4 * q + r - t < n * t) {
-      pi += n;
+      const digit = n;
+      pi += digit;
+      counts[digit]++;
+      document.getElementById('piResult').textContent = `Current digit: ${digit}`;
+      updateChart(counts);
       const nr = 10 * (r - n * t);
       n = ((10 * (3 * q + r)) / t) - (10 * n);
       q *= 10;
@@ -24,24 +31,18 @@ function calculatePi() {
       n = nn;
       r = nr;
     }
-    document.getElementById('piResult').textContent = 'Pi digits: ' + pi;
-    updateDigitCounts(pi);
-    if (pi.length >= digits) clearInterval(interval);
-  }, 10);
-}
-
-function updateDigitCounts(pi) {
-  const counts = new Array(10).fill(0);
-  for (let digit of pi) counts[parseInt(digit)]++;
-  sessionStorage.setItem('piDigitCounts', JSON.stringify(counts));
-  updateChart(counts);
+    currentDigitIndex++;
+    if (currentDigitIndex >= digits) {
+      clearInterval(interval);
+      document.getElementById('piResult').textContent = 'Calculation complete.';
+      sessionStorage.setItem('piDigitCounts', JSON.stringify(counts));
+    }
+  }, 50);
 }
 
 function updateChart(counts) {
   const ctx = document.getElementById('digitChart').getContext('2d');
   const maxCount = Math.max(...counts, 1);
-  const animatedCounts = counts.map(count => (count * animationStep) / 50);
-
   const firstTo500 = counts.map((count, index) => ({ digit: index, count }))
     .find(d => d.count >= 500)?.digit;
 
@@ -52,7 +53,7 @@ function updateChart(counts) {
       labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
       datasets: [{
         label: 'Digit Counts',
-        data: animatedCounts,
+        data: counts,
         backgroundColor: counts.map((_, i) => i === firstTo500 ? 'rgb(255, 0, 0)' : 'rgb(150, 150, 150)'),
         borderColor: counts.map((_, i) => i === firstTo500 ? 'rgb(200, 0, 0)' : 'rgb(100, 100, 100)'),
         borderWidth: 1
@@ -83,9 +84,8 @@ function updateChart(counts) {
         }
       },
       animation: {
-        duration: 100,
-        onProgress: () => animationStep++,
-        onComplete: () => animationStep = 50
+        duration: 300,
+        easing: 'linear'
       }
     },
     plugins: [{
