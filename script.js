@@ -276,10 +276,11 @@ async function* generateQuantumDigits(numDigits) {
   try {
     const response = await fetch('https://qrng.anu.edu.au/API/jsonI.php?length=' + Math.ceil(numDigits / 2) + '&type=uint8');
     const data = await response.json();
-    if (data.success) {
+    console.log('Quantum API response:', data); // Debug the response
+    if (data.success && Array.isArray(data.data)) {
       const numbers = data.data;
       for (let num of numbers) {
-        // Each uint8 gives two digits
+        if (index >= numDigits) break;
         const digit1 = Math.floor(num / 25.6); // First digit (0-9)
         const digit2 = Math.floor((num % 25.6) / 2.56); // Second digit (0-9)
         if (index < numDigits) {
@@ -291,6 +292,8 @@ async function* generateQuantumDigits(numDigits) {
           index++;
         }
       }
+    } else {
+      throw new Error('Invalid API response or no data');
     }
   } catch (err) {
     console.error('Quantum API failed, falling back to LCG:', err);
@@ -397,12 +400,13 @@ function calculateDigits(digits, calcType) {
     digitGenerator = generateXorshiftDigits(digits);
   } else if (calcType === 'quantum') {
     // Quantum generator is async, handle it differently
-    return (async () => {
-      const gen = await generateQuantumDigits(digits);
+    (async () => {
+      const gen = generateQuantumDigits(digits);
       let digitSequence = '';
-      let result;
-      while (!(result = gen.next()).done && currentDigitIndex < digits) {
-        const digit = result.value;
+      while (currentDigitIndex < digits) {
+        const { value, done } = await gen.next();
+        if (done) break;
+        const digit = value;
         counts[digit]++;
         digitSequence += digit;
         document.getElementById('liveDigit').textContent = digit;
@@ -420,6 +424,7 @@ function calculateDigits(digits, calcType) {
       }
       finalizeCalculation(digits, digitSequence);
     })();
+    return; // Exit early for async handling
   } else if (calcType === 'rule30') {
     digitGenerator = generateRule30Digits(digits);
   }
