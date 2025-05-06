@@ -67,13 +67,19 @@ function initializeChart() {
 
 function updateChartData(chart, data, target) {
   console.log('Updating chart data with counts:', data);
+  // Find the first digit to reach or exceed the target, or the digit with the highest count
   const firstToTarget = data.map((count, index) => ({ digit: index, count }))
     .find(d => d.count >= target)?.digit;
+  const maxCount = Math.max(...data);
+  const winningDigit = firstToTarget !== undefined ? firstToTarget : 
+                       data.findIndex(count => count === maxCount);
+
+  // Update colors: dark red for the winner, original colors for others
   chart.data.datasets[0].backgroundColor = data.map((_, i) => 
-    i === firstToTarget ? 'rgb(255, 0, 0)' : digitColors[i]
+    i === winningDigit ? 'rgb(139, 0, 0)' : digitColors[i]
   );
   chart.data.datasets[0].borderColor = data.map((_, i) => 
-    i === firstToTarget ? 'rgb(200, 0, 0)' : digitBorderColors[i]
+    i === winningDigit ? 'rgba(139, 0, 0, 0.8)' : digitBorderColors[i]
   );
   chart.data.datasets[0].data = [...data];
   chart.options.scales.y.suggestedMax = Math.max(...data, 1) * 1.2;
