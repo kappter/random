@@ -68,12 +68,9 @@ function initializeChart() {
 
 function updateChartData(chart, data, target) {
   console.log('Updating chart data with counts:', data);
-  // Find the digit with the highest count (or first to reach target for highlighting)
-  const firstToTarget = data.map((count, index) => ({ digit: index, count }))
-    .find(d => d.count >= target)?.digit;
+  // Find the digit with the highest count at the end of calculation
   const maxCount = Math.max(...data);
-  const winningDigit = firstToTarget !== undefined ? firstToTarget : 
-                       data.findIndex(count => count === maxCount);
+  const winningDigit = data.findIndex(count => count === maxCount);
 
   // Update colors: dark red for the winner, original colors for others
   chart.data.datasets[0].backgroundColor = data.map((_, i) => 
@@ -105,7 +102,7 @@ function* generatePiDigits(numDigits) {
 }
 
 // Gaussian digit generator (Box-Muller transform)
-function* generate GaussianDigits(numDigits) {
+function* generateGaussianDigits(numDigits) {
   let index = 0;
   while (index < numDigits) {
     const u1 = Math.random();
