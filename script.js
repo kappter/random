@@ -186,7 +186,7 @@ function calculateDigits(digits, calcType) {
       const firstToTarget = counts.map((count, index) => ({ digit: index, count }))
         .find(d => d.count >= target)?.digit;
       myChart.data.datasets[0].backgroundColor = counts.map((_, i) => 
-        i === firstToTarget ? 'rgb(255, 0, 0)' : digitColors i]
+        i === firstToTarget ? 'rgb(255, 0, 0)' : digitColors[i]
       );
       myChart.data.datasets[0].borderColor = counts.map((_, i) => 
         i === firstToTarget ? 'rgb(200, 0, 0)' : digitBorderColors[i]
