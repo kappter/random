@@ -1,5 +1,6 @@
 let myChart;
 let counts = new Array(10).fill(0);
+let submittedGuess = null;
 
 // Monochromatic color palette: brightest from digit 0 to deep dark blue (0, 0, 139) at digit 9
 const baseBlue = [0, 0, 139]; // Deep dark blue
@@ -67,7 +68,7 @@ function initializeChart() {
 
 function updateChartData(chart, data, target) {
   console.log('Updating chart data with counts:', data);
-  // Find the first digit to reach or exceed the target, or the digit with the highest count
+  // Find the digit with the highest count (or first to reach target for highlighting)
   const firstToTarget = data.map((count, index) => ({ digit: index, count }))
     .find(d => d.count >= target)?.digit;
   const maxCount = Math.max(...data);
@@ -173,7 +174,23 @@ function validateAndCalculate() {
     alert('Please enter a number between 100 and 10000.');
     return;
   }
+  if (submittedGuess === null) {
+    alert('Please submit a guess before calculating.');
+    return;
+  }
   calculateDigits(digitsInput, calcType);
+}
+
+function submitGuess() {
+  const guess = parseInt(document.getElementById('guess').value);
+  if (isNaN(guess) || guess < 0 || guess > 9) {
+    alert('Please enter a valid digit (0-9) for your guess.');
+    return;
+  }
+  submittedGuess = guess;
+  document.getElementById('guessResult').textContent = `Guess submitted: Digit ${guess}`;
+  document.getElementById('guess').disabled = true;
+  document.getElementById('submitGuess').disabled = true;
 }
 
 function calculateDigits(digits, calcType) {
@@ -183,8 +200,9 @@ function calculateDigits(digits, calcType) {
   }
   document.getElementById('liveDigit').textContent = 'Calculating...';
   document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
-  document.getElementById('guessSection').style.display = 'block';
   document.getElementById('summaryReport').innerHTML = ''; // Clear previous report
+  document.getElementById('guess').disabled = true;
+  document.getElementById('submitGuess').disabled = true;
   let currentDigitIndex = 0;
   let updateCounter = 0;
   const updateInterval = 50;
@@ -198,7 +216,7 @@ function calculateDigits(digits, calcType) {
     const result = digitGenerator.next();
     if (result.done || currentDigitIndex >= digits) {
       console.log('Final chart update');
-      const target = parseInt(document.getElementById('targetCount')?.value) || 500;
+      const target = Math.ceil(digits / 10); // Example target: 10% of digits
       updateChartData(myChart, counts, target);
       document.getElementById('liveDigit').textContent = 'Done';
       document.getElementById('progress').textContent = `Processed: ${digits}/${digits} digits`;
@@ -212,6 +230,11 @@ function calculateDigits(digits, calcType) {
         return `Digit ${index}: ${tally} ${tally === 1 ? 'tally' : 'tallies'} (Count: ${count})`;
       }).join('<br>');
       document.getElementById('summaryReport').innerHTML = `<h2>Summary Report</h2><p>${summary}</p>`;
+      // Check guess automatically
+      checkGuess();
+      // Re-enable guess input for next calculation
+      document.getElementById('guess').disabled = false;
+      document.getElementById('submitGuess').disabled = false;
       return;
     }
 
@@ -223,7 +246,7 @@ function calculateDigits(digits, calcType) {
 
     updateCounter++;
     if (updateCounter >= updateInterval) {
-      const target = parseInt(document.getElementById('targetCount')?.value) || 500;
+      const target = Math.ceil(digits / 10);
       updateChartData(myChart, counts, target);
       updateCounter = 0;
     }
@@ -236,19 +259,24 @@ function calculateDigits(digits, calcType) {
 }
 
 function checkGuess() {
-  const target = parseInt(document.getElementById('targetCount').value);
-  const guess = parseInt(document.getElementById('guess').value);
   const counts = JSON.parse(sessionStorage.getItem('digitCounts') || '[0,0,0,0,0,0,0,0,0,0]');
-  const result = counts.map((count, index) => ({ digit: index, count })).sort((a, b) => b.count - a.count);
-  const firstToTarget = result.find(d => d.count >= target);
-  if (firstToTarget) {
-    const message = guess === firstToTarget.digit 
-      ? `Correct! The first digit to reach ${target} is ${firstToTarget.digit} with ${firstToTarget.count} occurrences.`
-      : `Wrong! The first digit to reach ${target} is ${firstToTarget.digit} with ${firstToTarget.count} occurrences.`;
+  const maxCount = Math.max(...counts);
+  const winners = counts
+    .map((count, index) => ({ digit: index, count }))
+    .filter(d => d.count === maxCount)
+    .map(d => d.digit);
+  const guess = submittedGuess;
+
+  if (winners.length > 0) {
+    const message = winners.includes(guess)
+      ? `Correct! Your guess (${guess}) was one of the digits with the most instances (${maxCount} occurrences). Winning digits: ${winners.join(', ')}.`
+      : `Wrong! Your guess (${guess}) had ${counts[guess]} occurrences. The winning digits were ${winners.join(', ')} with ${maxCount} occurrences.`;
     document.getElementById('guessResult').textContent = message;
   } else {
-    document.getElementById('guessResult').textContent = 'Not enough digits calculated yet.';
+    document.getElementById('guessResult').textContent = 'No digits calculated yet.';
   }
+  // Reset guess for next calculation
+  submittedGuess = null;
 }
 
 function toggleGuessSection() {
