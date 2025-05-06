@@ -10,8 +10,8 @@ function initializeChart() {
       datasets: [{
         label: 'Digit Counts',
         data: counts,
-        backgroundColor: counts.map((_, i) => 'rgb(150, 150, 150)'),
-        borderColor: counts.map((_, i) => 'rgb(100, 100, 100)'),
+        backgroundColor: counts.map(() => 'rgb(150, 150, 150)'),
+        borderColor: counts.map(() => 'rgb(100, 100, 100)'),
         borderWidth: 1
       }]
     },
@@ -40,7 +40,7 @@ function initializeChart() {
         }
       },
       animation: {
-        duration: 100, // Minimal animation for smooth updates
+        duration: 100,
         easing: 'linear'
       }
     }
@@ -52,8 +52,6 @@ function calculatePi() {
   let q = 1, r = 0, t = 1, k = 1, n = 3, l = 3;
   counts = new Array(10).fill(0);
   if (!myChart) initializeChart();
-  myChart.data.datasets[0].data = counts;
-  myChart.update();
   document.getElementById('liveDigit').textContent = 'Calculating...';
   document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
   document.getElementById('guessSection').style.display = 'block';
@@ -61,7 +59,7 @@ function calculatePi() {
 
   const interval = setInterval(() => {
     if (4 * q + r - t < n * t) {
-      const digit = n;
+      const digit = Math.floor(n); // Ensure digit is an integer
       counts[digit]++;
       document.getElementById('liveDigit').textContent = digit;
       document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
@@ -73,8 +71,8 @@ function calculatePi() {
       myChart.data.datasets[0].backgroundColor = counts.map((_, i) => i === firstToTarget ? 'rgb(255, 0, 0)' : 'rgb(150, 150, 150)');
       myChart.data.datasets[0].borderColor = counts.map((_, i) => i === firstToTarget ? 'rgb(200, 0, 0)' : 'rgb(100, 100, 100)');
       
-      // Update chart data and refresh
-      myChart.data.datasets[0].data = counts;
+      // Update chart data
+      myChart.data.datasets[0].data = [...counts]; // Spread to ensure array is copied
       myChart.options.scales.y.max = Math.max(...counts, 1) * 1.2;
       myChart.update();
       
