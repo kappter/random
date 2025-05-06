@@ -1,10 +1,10 @@
 let myChart;
 let counts = new Array(10).fill(0);
 
-// Monochromatic color palette: deep dark blue (0, 0, 139) to lighter shades
+// Monochromatic color palette: brightest from digit 0 to deep dark blue (0, 0, 139) at digit 9
 const baseBlue = [0, 0, 139]; // Deep dark blue
 const digitColors = Array.from({ length: 10 }, (_, i) => {
-  const lightness = i * 20; // Increase lightness incrementally
+  const lightness = (9 - i) * 20; // Decrease lightness from 180 (brightest) to 0 (base blue)
   return `rgb(${Math.min(baseBlue[0] + lightness, 255)}, ${Math.min(baseBlue[1] + lightness, 255)}, ${baseBlue[2] + lightness})`;
 });
 const digitBorderColors = digitColors.map(color => color.replace('rgb', 'rgba').replace(')', ', 0.8)'));
