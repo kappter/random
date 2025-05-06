@@ -59,6 +59,7 @@
         <option value="pi">Pi Digits</option>
         <option value="gaussian">Gaussian Digits</option>
         <option value="perlin">Perlin Noise Digits</option>
+        <option value="lcg">LCG Digits</option>
       </select>
       <button onclick="validateAndCalculate()">Calculate</button>
     </div>
@@ -67,6 +68,7 @@
     <div class="chart-container">
       <canvas id="digitChart"></canvas>
     </div>
+    <div id="summaryReport"></div>
     <div id="guessSection" style="display: none;">
       <h2>Guess the First Digit to Reach Target</h2>
       <label for="targetCount">Target Count:</label>

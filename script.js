@@ -144,6 +144,22 @@ function* generatePerlinDigits(numDigits) {
   }
 }
 
+// Linear Congruential Generator (LCG) digit generator
+function* generateLCGDigits(numDigits) {
+  let index = 0;
+  let seed = Date.now() % 4294967296; // Use current timestamp as seed
+  const a = 1664525;
+  const c = 1013904223;
+  const m = 2**32; // Modulus
+  while (index < numDigits) {
+    seed = (a * seed + c) % m;
+    const value = seed / m; // Normalize to [0, 1)
+    const digit = Math.floor(value * 10); // Map to 0-9
+    yield digit;
+    index++;
+  }
+}
+
 function validateAndCalculate() {
   const digitsInput = parseInt(document.getElementById('digits').value);
   const calcType = document.getElementById('calcType').value;
@@ -162,12 +178,14 @@ function calculateDigits(digits, calcType) {
   document.getElementById('liveDigit').textContent = 'Calculating...';
   document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
   document.getElementById('guessSection').style.display = 'block';
+  document.getElementById('summaryReport').innerHTML = ''; // Clear previous report
   let currentDigitIndex = 0;
   let updateCounter = 0;
   const updateInterval = 50;
   const digitGenerator = calcType === 'pi' ? generatePiDigits(digits) :
                          calcType === 'gaussian' ? generateGaussianDigits(digits) :
-                         generatePerlinDigits(digits);
+                         calcType === 'perlin' ? generatePerlinDigits(digits) :
+                         generateLCGDigits(digits);
   let digitSequence = '';
 
   function updateLoop() {
@@ -182,6 +200,12 @@ function calculateDigits(digits, calcType) {
       console.log('Counts:', counts);
       console.log('Total count:', counts.reduce((a, b) => a + b, 0));
       sessionStorage.setItem('digitCounts', JSON.stringify(counts));
+      // Generate summary report
+      const summary = counts.map((count, index) => {
+        const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
+        return `Digit ${index}: ${tally} ${tally === 1 ? 'tally' : 'tallies'} (Count: ${count})`;
+      }).join('<br>');
+      document.getElementById('summaryReport').innerHTML = `<h2>Summary Report</h2><p>${summary}</p>`;
       return;
     }
 
