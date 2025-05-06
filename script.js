@@ -52,9 +52,8 @@ function initializeChart() {
           backgroundColor: 'rgba(255, 255, 255, 0.9)',
           borderRadius: 4,
           padding: 6,
-          formatter: (value, context) => {
-            const count = counts[context.dataIndex];
-            const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
+          formatter: (value) => {
+            const tally = Math.floor(value / 5) + (value % 5 > 0 ? 1 : 0);
             return `Tally: ${tally}`;
           },
           color: '#000',
@@ -150,6 +149,8 @@ function calculateDigits(digits, calcType) {
   document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
   document.getElementById('guessSection').style.display = 'block';
   let currentDigitIndex = 0;
+  let updateCounter = 0;
+  const updateInterval = 10; // Update chart every 10 digits
   const digitGenerator = calcType === 'pi' ? generatePiDigits(digits) :
                          calcType === 'gaussian' ? generateGaussianDigits(digits) :
                          generatePerlinDigits(digits);
@@ -159,6 +160,10 @@ function calculateDigits(digits, calcType) {
     const result = digitGenerator.next();
     if (result.done || currentDigitIndex >= digits) {
       clearInterval(interval);
+      // Final chart update
+      myChart.data.datasets[0].data = [...counts];
+      myChart.options.scales.y.suggestedMax = Math.max(...counts, 1) * 1.2;
+      myChart.update();
       document.getElementById('liveDigit').textContent = 'Done';
       document.getElementById('progress').textContent = `Processed: ${digits}/${digits} digits`;
       console.log('Digit sequence:', digitSequence);
@@ -174,21 +179,23 @@ function calculateDigits(digits, calcType) {
     document.getElementById('liveDigit').textContent = digit;
     document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
     
-    // Update chart colors for the first digit to reach target
-    const target = parseInt(document.getElementById('targetCount')?.value) || 500;
-    const firstToTarget = counts.map((count, index) => ({ digit: index, count }))
-      .find(d => d.count >= target)?.digit;
-    myChart.data.datasets[0].backgroundColor = counts.map((_, i) => 
-      i === firstToTarget ? 'rgb(255, 0, 0)' : digitColors[i]
-    );
-    myChart.data.datasets[0].borderColor = counts.map((_, i) => 
-      i === firstToTarget ? 'rgb(200, 0, 0)' : digitBorderColors[i]
-    );
-    
-    // Update chart data and scale
-    myChart.data.datasets[0].data = [...counts];
-    myChart.options.scales.y.suggestedMax = Math.max(...counts, 1) * 1.2;
-    myChart.update();
+    // Update chart only every 'updateInterval' digits
+    updateCounter++;
+    if (updateCounter >= updateInterval) {
+      const target = parseInt(document.getElementById('targetCount')?.value) || 500;
+      const firstToTarget = counts.map((count, index) => ({ digit: index, count }))
+        .find(d => d.count >= target)?.digit;
+      myChart.data.datasets[0].backgroundColor = counts.map((_, i) => 
+        i === firstToTarget ? 'rgb(255, 0, 0)' : digitColors i]
+      );
+      myChart.data.datasets[0].borderColor = counts.map((_, i) => 
+        i === firstToTarget ? 'rgb(200, 0, 0)' : digitBorderColors[i]
+      );
+      myChart.data.datasets[0].data = [...counts];
+      myChart.options.scales.y.suggestedMax = Math.max(...counts, 1) * 1.2;
+      myChart.update();
+      updateCounter = 0;
+    }
     
     currentDigitIndex++;
   }, 50);
