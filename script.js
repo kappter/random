@@ -1,6 +1,21 @@
 let myChart;
 let counts = new Array(10).fill(0);
 
+// Define a vibrant color palette for digits 0-9
+const digitColors = [
+  'rgb(31, 119, 180)',   // 0: Blue
+  'rgb(255, 127, 14)',   // 1: Orange
+  'rgb(44, 160, 44)',    // 2: Green
+  'rgb(214, 39, 40)',    // 3: Red
+  'rgb(148, 103, 189)',  // 4: Purple
+  'rgb(140, 86, 75)',    // 5: Brown
+  'rgb(227, 119, 194)',  // 6: Pink
+  'rgb(127, 127, 127)',  // 7: Gray
+  'rgb(188, 189, 34)',   // 8: Olive
+  'rgb(23, 190, 207)'    // 9: Cyan
+];
+const digitBorderColors = digitColors.map(color => color.replace('rgb', 'rgba').replace(')', ', 0.8)'));
+
 function initializeChart() {
   const ctx = document.getElementById('digitChart').getContext('2d');
   myChart = new Chart(ctx, {
@@ -10,17 +25,20 @@ function initializeChart() {
       datasets: [{
         label: 'Digit Counts',
         data: counts,
-        backgroundColor: counts.map(() => 'rgb(150, 150, 150)'),
-        borderColor: counts.map(() => 'rgb(100, 100, 100)'),
+        backgroundColor: digitColors,
+        borderColor: digitBorderColors,
         borderWidth: 1
       }]
     },
     options: {
+      responsive: true,
+      maintainAspectRatio: false,
       scales: {
         y: {
           beginAtZero: true,
           title: { display: true, text: 'Count' },
-          ticks: { stepSize: 100 }
+          ticks: { stepSize: 100 },
+          suggestedMax: 600 // Initial max, will adjust dynamically
         },
         x: {
           title: { display: true, text: 'Digits' }
@@ -30,13 +48,18 @@ function initializeChart() {
         datalabels: {
           anchor: 'end',
           align: 'top',
+          offset: 5,
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          borderRadius: 4,
+          padding: 4,
           formatter: (value, context) => {
             const count = counts[context.dataIndex];
             const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
             return `Tally: ${tally}`;
           },
           color: '#000',
-          font: { weight: 'bold', size: 12 }
+          font: { weight: 'bold', size: 12 },
+          textAlign: 'center'
         }
       },
       animation: {
@@ -108,12 +131,16 @@ function calculatePi(digits) {
     const target = parseInt(document.getElementById('targetCount')?.value) || 500;
     const firstToTarget = counts.map((count, index) => ({ digit: index, count }))
       .find(d => d.count >= target)?.digit;
-    myChart.data.datasets[0].backgroundColor = counts.map((_, i) => i === firstToTarget ? 'rgb(255, 0, 0)' : 'rgb(150, 150, 150)');
-    myChart.data.datasets[0].borderColor = counts.map((_, i) => i === firstToTarget ? 'rgb(200, 0, 0)' : 'rgb(100, 100, 100)');
+    myChart.data.datasets[0].backgroundColor = counts.map((_, i) => 
+      i === firstToTarget ? 'rgb(255, 0, 0)' : digitColors[i]
+    );
+    myChart.data.datasets[0].borderColor = counts.map((_, i) => 
+      i === firstToTarget ? 'rgb(200, 0, 0)' : digitBorderColors[i]
+    );
     
-    // Update chart data
+    // Update chart data and scale
     myChart.data.datasets[0].data = [...counts];
-    myChart.options.scales.y.max = Math.max(...counts, 1) * 1.2;
+    myChart.options.scales.y.suggestedMax = Math.max(...counts, 1) * 1.2;
     myChart.update();
     
     currentDigitIndex++;
