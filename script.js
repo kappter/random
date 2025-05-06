@@ -204,6 +204,18 @@ function submitGuess() {
   document.getElementById('submitGuess').disabled = true;
 }
 
+function copyDigits() {
+  const digitSequence = document.getElementById('digitSequence').value;
+  navigator.clipboard.writeText(digitSequence)
+    .then(() => {
+      alert('Digits copied to clipboard!');
+    })
+    .catch(err => {
+      console.error('Failed to copy digits:', err);
+      alert('Failed to copy digits. Please copy manually from the textbox.');
+    });
+}
+
 function calculateDigits(digits, calcType) {
   counts = new Array(10).fill(0);
   if (!myChart) {
@@ -214,6 +226,7 @@ function calculateDigits(digits, calcType) {
   document.getElementById('summaryReport').innerHTML = ''; // Clear previous report
   document.getElementById('guess').disabled = true;
   document.getElementById('submitGuess').disabled = true;
+  document.getElementById('digitSequence').value = ''; // Clear the textbox
   let currentDigitIndex = 0;
   let updateCounter = 0;
   const updateInterval = 50;
@@ -256,6 +269,8 @@ function calculateDigits(digits, calcType) {
     digitSequence += digit;
     document.getElementById('liveDigit').textContent = digit;
     document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
+    // Update the textbox with the current digit sequence
+    document.getElementById('digitSequence').value = digitSequence;
 
     updateCounter++;
     if (updateCounter >= updateInterval) {

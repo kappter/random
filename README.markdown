@@ -1,7 +1,7 @@
 # Live Random Calculator
 
 ## Overview
-The Live Random Calculator is a web application that generates and visualizes random digit sequences using different methods (Pi digits, Gaussian distribution, Perlin noise, and Linear Congruential Generator). It displays the frequency of each digit (0–9) in a bar chart, updating in real-time as digits are processed. The app includes an optional interactive guessing game where users can predict which digit will have the most instances after a set number of digits, with results displayed automatically upon completion if a guess is submitted.
+The Live Random Calculator is a web application that generates and visualizes random digit sequences using different methods (Pi digits, Gaussian distribution, Perlin noise, and Linear Congruential Generator). It displays the frequency of each digit (0–9) in a bar chart, updating in real-time as digits are processed. The app includes an optional interactive guessing game where users can predict which digit will have the most instances after a set number of digits, with results displayed automatically upon completion if a guess is submitted. Users can view the generated digit sequence in a textbox as it’s built and copy the sequence to the clipboard.
 
 ## Features
 - **Multiple Generation Methods**: Choose between four digit generation methods:
@@ -11,10 +11,12 @@ The Live Random Calculator is a web application that generates and visualizes ra
   - **LCG Digits**: Generates digits using a Linear Congruential Generator for a uniform pseudo-random distribution.
 - **Real-Time Visualization**: 
   - A bar chart updates every 50 digits during calculation, showing the frequency of each digit.
-  - Each bar displays a persistent label above it with the exact count (e.g., "Count: 42") and tally (count divided by 5, rounded up, e.g., "Tally: 9"), visible without hovering.
-  - The digit with the highest count (or the first to reach an internal target, set to 10% of total digits) is highlighted in dark red (`rgb(139, 0, 0)`) during and after calculation, updating dynamically as the lead changes.
+  - Each bar displays a tally (count divided by 5, rounded up, e.g., "3") superimposed in white text inside the bar, and a count (e.g., "Count: 13") in a white box above the bar.
+  - Digits with the highest count are highlighted in dark red (`rgb(139, 0, 0)`) during and after calculation, with all tied winners highlighted.
 - **Interactive Feedback**:
   - Live display of the current digit being processed and the total digits processed (e.g., "Processed: 500/1000 digits").
+  - A readonly textbox displays the generated digit sequence as it’s built.
+  - A "Copy Digits" button allows users to copy the digit sequence to the clipboard.
   - A summary report appears below the chart after calculation, listing each digit’s tally and count (e.g., "Digit 0: 21 tallies (Count: 102)").
 - **Optional Guessing Game**:
   - Users can choose to guess which digit (0–9) will have the most instances after the specified number of digits are processed.
@@ -57,12 +59,16 @@ The Live Random Calculator is a web application that generates and visualizes ra
    - You can hide the guess section using the "Hide Guess Section" button if you don’t want to guess.
 4. **Start the Calculation**:
    - Click the "Calculate" button to begin generating digits (no guess required).
-   - Watch the chart update every 50 digits, with each bar showing its count and tally (e.g., "Count: 42\nTally: 9") and the leading digit highlighted in dark red.
+   - Watch the digit sequence build in the "Generated Digits" textbox in real-time.
+   - The chart updates every 50 digits, with each bar showing its tally (e.g., "3") inside and count (e.g., "Count: 13") above, with leading digits highlighted in dark red.
    - The "Live Digit" display shows the current digit, and the "Processed" counter tracks progress.
    - After completion:
      - A summary report appears below the chart, listing each digit’s tally and count.
      - If a guess was submitted, the guess result is displayed automatically (e.g., "Correct! Your guess (9) was one of the digits with the most instances (13 occurrences).").
      - The guess input is re-enabled for the next calculation.
+5. **Copy the Digit Sequence**:
+   - Click the "Copy Digits" button to copy the generated digit sequence to your clipboard.
+   - A confirmation alert will appear if successful, or an error message if the copy fails.
 
 ## Debugging Tips
 - **Chart Not Updating**:
@@ -76,6 +82,9 @@ The Live Random Calculator is a web application that generates and visualizes ra
 - **Labels Not Visible**:
   - Ensure the Chart.js Datalabels plugin is loaded correctly.
   - Check for CSS conflicts or browser-specific rendering issues.
+- **Copy Digits Issues**:
+  - If the "Copy Digits" button fails, check the console for errors (e.g., clipboard API restrictions).
+  - Ensure your browser supports the Clipboard API; if not, manually copy from the textbox.
 
 ## Future Improvements
 - Add more digit generation methods (e.g., Mersenne Twister, chaotic maps).
@@ -86,6 +95,7 @@ The Live Random Calculator is a web application that generates and visualizes ra
   - A "Reset Guess" button to clear the current guess without hiding the section.
 - Improve the UI with additional styling options, themes, or a downloadable summary report.
 - Customize data label appearance (e.g., font size, background opacity) for better readability.
+- Add formatting options for the digit sequence (e.g., spaces every 10 digits).
 
 ## License
 This project is open-source and available under the MIT License.
