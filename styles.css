@@ -13,10 +13,13 @@ button {
   margin-left: 10px;
   padding: 5px 10px;
 }
-#piResult, #guessResult {
+#liveDigit, #progress, #guessResult {
   margin-top: 10px;
 }
 #digitChart {
   margin-top: 20px;
   height: 400px;
+}
+#guessSection {
+  margin-top: 20px;
 }

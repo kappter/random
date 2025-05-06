@@ -3,19 +3,20 @@ let counts = new Array(10).fill(0);
 
 function calculatePi() {
   const digits = parseInt(document.getElementById('digits').value);
-  let pi = '';
   let q = 1, r = 0, t = 1, k = 1, n = 3, l = 3;
   counts = new Array(10).fill(0);
   updateChart(counts);
-  document.getElementById('piResult').textContent = 'Calculating...';
+  document.getElementById('liveDigit').textContent = 'Calculating...';
+  document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
+  document.getElementById('guessSection').style.display = 'block';
   let currentDigitIndex = 0;
 
   const interval = setInterval(() => {
     if (4 * q + r - t < n * t) {
       const digit = n;
-      pi += digit;
       counts[digit]++;
-      document.getElementById('piResult').textContent = `Current digit: ${digit}`;
+      document.getElementById('liveDigit').textContent = `Current digit: ${digit}`;
+      document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
       updateChart(counts);
       const nr = 10 * (r - n * t);
       n = ((10 * (3 * q + r)) / t) - (10 * n);
@@ -34,7 +35,8 @@ function calculatePi() {
     currentDigitIndex++;
     if (currentDigitIndex >= digits) {
       clearInterval(interval);
-      document.getElementById('piResult').textContent = 'Calculation complete.';
+      document.getElementById('liveDigit').textContent = 'Calculation complete.';
+      document.getElementById('progress').textContent = `Processed: ${digits}/${digits} digits`;
       sessionStorage.setItem('piDigitCounts', JSON.stringify(counts));
     }
   }, 50);
@@ -121,4 +123,9 @@ function checkGuess() {
   } else {
     document.getElementById('guessResult').textContent = 'Not enough digits calculated yet.';
   }
+}
+
+function toggleGuessSection() {
+  const section = document.getElementById('guessSection');
+  section.style.display = section.style.display === 'none' ? 'block' : 'none';
 }

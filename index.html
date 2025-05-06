@@ -42,22 +42,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pi Calculator</title>
+  <title>Live Pi Calculator</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div id="app">
-    <h1>Pi Calculator</h1>
+    <h1>Live Pi Calculator</h1>
     <div>
       <label for="digits">Number of digits to calculate:</label>
       <input type="number" id="digits" min="100" value="1000">
-      <button onclick="calculatePi()">Calculate</button>
+      <button onclick="calculatePi()">Start Calculation</button>
     </div>
-    <div id="piResult"></div>
+    <div id="liveDigit">Waiting for calculation...</div>
+    <div id="progress">Processed: 0/0 digits</div>
     <div>
       <canvas id="digitChart"></canvas>
     </div>
-    <div>
+    <div id="guessSection" style="display: none;">
       <label for="targetCount">Target count:</label>
       <input type="number" id="targetCount" min="500" value="500">
       <label for="guess">Guess the first digit to reach target:</label>
@@ -65,6 +66,7 @@
       <button onclick="checkGuess()">Submit Guess</button>
       <div id="guessResult"></div>
     </div>
+    <button onclick="toggleGuessSection()">Toggle Guess Mode</button>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
