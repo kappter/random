@@ -46,6 +46,7 @@ function initializeChart() {
       },
       plugins: {
         datalabels: {
+          display: false, // Initially disabled, enabled only on final update
           anchor: 'end',
           align: 'top',
           offset: 5,
@@ -150,7 +151,7 @@ function calculateDigits(digits, calcType) {
   document.getElementById('guessSection').style.display = 'block';
   let currentDigitIndex = 0;
   let updateCounter = 0;
-  const updateInterval = 10; // Update chart every 10 digits
+  const updateInterval = 50; // Update chart every 50 digits
   const digitGenerator = calcType === 'pi' ? generatePiDigits(digits) :
                          calcType === 'gaussian' ? generateGaussianDigits(digits) :
                          generatePerlinDigits(digits);
@@ -160,7 +161,8 @@ function calculateDigits(digits, calcType) {
     const result = digitGenerator.next();
     if (result.done || currentDigitIndex >= digits) {
       clearInterval(interval);
-      // Final chart update
+      // Final chart update with datalabels enabled
+      myChart.options.plugins.datalabels.display = true;
       myChart.data.datasets[0].data = [...counts];
       myChart.options.scales.y.suggestedMax = Math.max(...counts, 1) * 1.2;
       myChart.update();
@@ -193,7 +195,7 @@ function calculateDigits(digits, calcType) {
       );
       myChart.data.datasets[0].data = [...counts];
       myChart.options.scales.y.suggestedMax = Math.max(...counts, 1) * 1.2;
-      myChart.update();
+      myChart.update('none'); // Minimal update to reduce flicker
       updateCounter = 0;
     }
     
