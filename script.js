@@ -56,32 +56,30 @@ function updateChart(counts) {
       labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
       datasets: [{
         label: 'Digit Counts',
-        data: counts.map(count => maxCount - count), // Invert data for downward growth
+        data: counts, // Data grows upward
         backgroundColor: counts.map((_, i) => i === firstToTarget ? 'rgb(255, 0, 0)' : 'rgb(150, 150, 150)'),
         borderColor: counts.map((_, i) => i === firstToTarget ? 'rgb(200, 0, 0)' : 'rgb(100, 100, 100)'),
         borderWidth: 1
       }]
     },
     options: {
-      indexAxis: 'y', // Vertical bars
       scales: {
-        x: {
-          reverse: true, // Invert x-axis to match downward growth
+        y: {
           beginAtZero: true,
           max: maxCount * 1.2,
           title: { display: true, text: 'Count' },
           ticks: { stepSize: 100 }
         },
-        y: {
+        x: {
           title: { display: true, text: 'Digits' }
         }
       },
       plugins: {
         datalabels: {
-          anchor: 'start',
+          anchor: 'end',
           align: 'top',
           formatter: (value, context) => {
-            const count = maxCount - value; // Adjust for inverted data
+            const count = counts[context.dataIndex];
             return `${context.chart.data.labels[context.dataIndex]}=${count}`;
           },
           color: '#000',
@@ -100,12 +98,12 @@ function updateChart(counts) {
           const meta = chart.getDatasetMeta(0);
           const x = meta.data[index].x;
           const y = meta.data[index].y;
-          const count = maxCount - value; // Adjust for inverted data
+          const count = counts[index];
           const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
           ctx.fillStyle = '#000';
           ctx.font = '12px Arial';
           ctx.textAlign = 'center';
-          ctx.fillText(`Tally: ${tally}`, x, y - 10);
+          ctx.fillText(`Tally: ${tally}`, x, y - 35);
         });
       }
     }]
