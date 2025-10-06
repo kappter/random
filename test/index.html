@@ -3,30 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Random Calculator with Entropy Animation</title>
+    <title>Randomness Entropy Comparison Lab</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 </head>
 <body>
-    <h1>Live Random Calculator</h1>
+    <h1>Randomness Entropy Comparison Lab</h1>
 
-    <div id="guessSection">
-        <h2>Guess Which Digit Will Have the Most Instances</h2>
-        <input type="number" id="guess" min="0" max="9" placeholder="Enter digit (0-9)">
-        <button onclick="submitGuess()" id="submitGuess">Submit Guess</button>
-        <button onclick="toggleGuessSection()">Hide Guess Section</button>
-        <p id="guessResult"></p>
+    <div>
+        <label for="digits">Number of Digits (100–10000):</label>
+        <input type="number" id="digits" min="100" max="10000" value="1000">
     </div>
 
     <div>
-        <label for="digits">Number of Digits (100-10000):</label>
-        <input type="number" id="digits" min="100" max="10000" value="100">
-    </div>
-
-    <div>
-        <label for="calcType">Calculation Type:</label>
-        <select id="calcType">
+        <label for="calcType">Select Algorithms to Compare:</label><br>
+        <select id="calcType" multiple size="8">
             <option value="pi">Pi Digits</option>
             <option value="gaussian">Gaussian Digits</option>
             <option value="perlin">Perlin Noise Digits</option>
@@ -35,146 +26,117 @@
             <option value="logistic">Logistic Map</option>
             <option value="middleSquare">Middle-Square</option>
             <option value="xorshift">Xorshift</option>
-            <option value="quantum">Quantum Random (API)</option>
-            <option value="rule30">Cellular Automaton Rule 30</option>
+            <option value="rule30">Rule 30</option>
         </select>
+        <p style="font-size:0.9em;color:#555;">Hold Ctrl/Cmd to select multiple algorithms.</p>
     </div>
 
-    <button onclick="validateAndCalculate()">Calculate</button>
+    <button onclick="calculateAllSelected()">Run Comparison</button>
 
     <div>
-        <p>Live Digit: <span id="liveDigit">Not started</span></p>
-        <p id="progress">Processed: 0 digits</p>
+        <p id="progress">Ready.</p>
         <p id="liveEntropy">Entropy: 0.000 bits</p>
     </div>
 
     <canvas id="digitChart" width="800" height="400"></canvas>
     <canvas id="entropyChart" width="800" height="200"></canvas>
 
-    <div class="results-container">
-        <div id="summaryReport"></div>
-        <div class="digit-sequence-container">
-            <label for="digitSequence">Generated Digits:</label>
-            <textarea id="digitSequence" readonly rows="5" cols="30" placeholder="Digits will appear here as they are generated..."></textarea>
-            <br>
-            <button onclick="copyDigits()">Copy Digits</button>
-        </div>
-    </div>
+    <div id="summaryReport"></div>
 
-    <script>
-    let myChart;
-    let entropyChart;
-    let counts = new Array(10).fill(0);
+<script>
+let myChart;
+let entropyChart;
+let counts = new Array(10).fill(0);
 
-    function calculateEntropy(data) {
-        const total = data.reduce((a, b) => a + b, 0);
-        if (total === 0) return 0;
-        return -data.map(c => c / total).filter(p => p > 0).reduce((sum, p) => sum + p * Math.log2(p), 0);
-    }
+function calculateEntropy(data) {
+    const total = data.reduce((a,b)=>a+b,0);
+    if (total === 0) return 0;
+    return -data.map(c=>c/total).filter(p=>p>0).reduce((s,p)=>s+p*Math.log2(p),0);
+}
 
-    function initializeCharts() {
+function initializeCharts(reset=false) {
+    if (!myChart) {
         const ctx = document.getElementById('digitChart').getContext('2d');
         myChart = new Chart(ctx, {
             type: 'bar',
-            data: {
-                labels: ['0','1','2','3','4','5','6','7','8','9'],
-                datasets: [{
-                    label: 'Digit Counts',
-                    data: new Array(10).fill(0),
-                    backgroundColor: '#007BFF'
-                }]
-            },
-            options: {
-                animation: false,
-                responsive: false,
-                scales: { y: { beginAtZero: true } }
-            }
+            data: { labels:['0','1','2','3','4','5','6','7','8','9'], datasets:[{ label:'Digit Counts', data:new Array(10).fill(0), backgroundColor:'#007BFF' }]},
+            options: { animation:false, responsive:false, scales:{ y:{beginAtZero:true} } }
         });
-
-        const ectx = document.getElementById('entropyChart').getContext('2d');
+    }
+    const ectx = document.getElementById('entropyChart').getContext('2d');
+    if (!entropyChart || reset) {
         entropyChart = new Chart(ectx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Entropy Over Time',
-                    data: [],
-                    borderColor: 'rgb(0, 180, 0)',
-                    borderWidth: 2,
-                    fill: false,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                animation: false,
-                responsive: false,
-                scales: { y: { min: 0, max: 3.5, title: { display: true, text: 'Entropy (bits)' } }, x: { display: false } }
+            type:'line',
+            data:{ labels:[], datasets:[] },
+            options:{
+                animation:false,
+                responsive:false,
+                scales:{ y:{min:0,max:3.5,title:{display:true,text:'Entropy (bits)'}}, x:{display:false} }
             }
         });
     }
+}
 
-    function updateCharts() {
-        myChart.data.datasets[0].data = [...counts];
-        const entropy = calculateEntropy(counts).toFixed(3);
-        const entropyElem = document.getElementById('liveEntropy');
-        if (entropyElem) {
-            entropyElem.textContent = `Entropy: ${entropy} bits`;
-            const hue = (entropy / 3.32) * 120;
-            entropyElem.style.color = `hsl(${hue}, 80%, 35%)`;
-        }
+function updateDigitChart(data) {
+    myChart.data.datasets[0].data = [...data];
+    myChart.update();
+}
 
-        entropyChart.data.labels.push(entropyChart.data.labels.length);
-        entropyChart.data.datasets[0].data.push(entropy);
-        if (entropyChart.data.labels.length > 200) {
-            entropyChart.data.labels.shift();
-            entropyChart.data.datasets[0].data.shift();
-        }
+async function calculateAllSelected() {
+    const digits = parseInt(document.getElementById('digits').value);
+    const select = document.getElementById('calcType');
+    const selected = Array.from(select.selectedOptions).map(o=>o.value);
+    if (selected.length===0) { alert('Select at least one algorithm.'); return; }
 
-        myChart.update();
-        entropyChart.update();
+    initializeCharts(true);
+    document.getElementById('summaryReport').innerHTML = '';
+
+    for (const type of selected) {
+        document.getElementById('progress').textContent = `Running ${type}...`;
+        await runAlgorithm(type, digits);
     }
+    document.getElementById('progress').textContent = 'Comparison complete!';
+}
 
-    function validateAndCalculate() {
-        const digitsInput = parseInt(document.getElementById('digits').value);
-        if (isNaN(digitsInput) || digitsInput < 100 || digitsInput > 10000) {
-            alert('Please enter a number between 100 and 10000.');
-            return;
-        }
-        calculateDigits(digitsInput);
-    }
-
-    function calculateDigits(digits) {
+async function runAlgorithm(type, digits) {
+    return new Promise(resolve => {
         counts = new Array(10).fill(0);
-        if (!myChart) initializeCharts();
-        let index = 0;
-        let sequence = '';
+        const color = `hsl(${Math.random()*360},80%,40%)`;
+        const entropyData = [];
+        const labels = [];
+        let index=0;
 
         function loop() {
             if (index >= digits) {
-                finalizeCalculation(digits);
+                entropyChart.data.datasets.push({ label:type, data:entropyData, borderColor:color, borderWidth:2, fill:false, pointRadius:0 });
+                entropyChart.update();
+                const finalEntropy = calculateEntropy(counts).toFixed(3);
+                document.getElementById('summaryReport').innerHTML += `<p><strong>${type} Final Entropy:</strong> ${finalEntropy} bits</p>`;
+                resolve();
                 return;
             }
-            const digit = Math.floor(Math.random() * 10);
+
+            const digit = Math.floor(Math.random()*10); // placeholder random generator
             counts[digit]++;
-            sequence += digit;
 
-            document.getElementById('liveDigit').textContent = digit;
-            document.getElementById('progress').textContent = `Processed: ${index+1}/${digits}`;
-
-            if (index % 50 === 0) updateCharts();
+            if (index % 50 === 0) {
+                const entropy = calculateEntropy(counts);
+                entropyData.push(entropy);
+                labels.push(index);
+                const entropyElem = document.getElementById('liveEntropy');
+                entropyElem.textContent = `Entropy: ${entropy.toFixed(3)} bits (${type})`;
+                const hue = (entropy/3.32)*120;
+                entropyElem.style.color = `hsl(${hue},80%,35%)`;
+                updateDigitChart(counts);
+                entropyChart.update();
+            }
 
             index++;
             requestAnimationFrame(loop);
         }
-
         requestAnimationFrame(loop);
-    }
-
-    function finalizeCalculation(digits) {
-        updateCharts();
-        const entropy = calculateEntropy(counts).toFixed(3);
-        document.getElementById('summaryReport').innerHTML = `<h2>Summary Report</h2><p><strong>Entropy:</strong> ${entropy} bits</p>`;
-    }
-    </script>
+    });
+}
+</script>
 </body>
 </html>
