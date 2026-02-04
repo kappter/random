@@ -1,95 +1,136 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Random Calculator</title>
+    <title>Live Random Calculator - Enhanced</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
 <body>
-    <h1>Live Random Calculator</h1>
-    <div id="guessSection">
-        <h2>Guess Which Digit Will Have the Most Instances</h2>
-        <input type="number" id="guess" min="0" max="9" placeholder="Enter digit (0-9)">
-        <button onclick="submitGuess()" id="submitGuess">Submit Guess</button>
-        <button onclick="toggleGuessSection()">Hide Guess Section</button>
-        <p id="guessResult"></p>
-    </div>
-    <div>
-        <label for="digits">Number of Digits (100-10000):</label>
-        <input type="number" id="digits" min="100" max="10000" value="100">
-    </div>
-    <div>
-        <label for="calcType">Calculation Type:</label>
-        <select id="calcType">
-            <option value="pi">Pi Digits</option>
-            <option value="gaussian">Gaussian Digits</option>
-            <option value="perlin">Perlin Noise Digits</option>
-            <option value="lcg">LCG Digits</option>
-            <option value="mersenne">Mersenne Twister</option>
-            <option value="logistic">Logistic Map</option>
-            <option value="middleSquare">Middle-Square</option>
-            <option value="xorshift">Xorshift</option>
-            <option value="quantum">Quantum Random (API)</option>
-            <option value="rule30">Cellular Automaton Rule 30</option>
-        </select>
-    </div>
-    <button onclick="validateAndCalculate()">Calculate</button>
-    <div>
-        <p>Live Digit: <span id="liveDigit">Not started</span></p>
-        <p id="progress">Processed: 0 digits</p>
-    </div>
-    <canvas id="digitChart" width="800" height="400"></canvas>
-    <div class="results-container">
-        <div id="summaryReport"></div>
-        <div class="digit-sequence-container">
-            <label for="digitSequence">Generated Digits:</label>
-            <textarea id="digitSequence" readonly rows="5" cols="30" placeholder="Digits will appear here as they are generated..."></textarea>
-            <br>
-            <button onclick="copyDigits()">Copy Digits</button>
+    <div class="container">
+        <h1>Live Random Calculator</h1>
+        
+        <!-- Algorithm Information Panel -->
+        <div class="algorithm-info">
+            <h2 id="algorithmName">Algorithm: Pi Digits</h2>
+            <div class="algorithm-badges">
+                <span class="badge badge-type" id="algorithmType">Deterministic</span>
+                <span class="badge badge-distribution" id="algorithmDistribution">Uniform (Expected)</span>
+            </div>
+            <p id="algorithmDescription">Uses the digits of Pi. While deterministic, Pi digits are expected to be uniformly distributed across all bases.</p>
+            
+            <!-- New: Detailed Information Section -->
+            <div class="algorithm-details">
+                <div class="detail-section">
+                    <h4>📚 Basic Information</h4>
+                    <p id="algorithmBasicInfo">Pi's digits have been studied extensively and appear random despite being deterministic.</p>
+                </div>
+                <div class="detail-section">
+                    <h4>⚙️ Technical Details</h4>
+                    <p id="algorithmTechnicalInfo">Commonly used in demonstrations and educational contexts. Not suitable for cryptography.</p>
+                </div>
+                <div class="detail-section">
+                    <h4>💡 Common Use Cases</h4>
+                    <p id="algorithmUseCases">Education, demonstrations, testing statistical analysis tools.</p>
+                </div>
+            </div>
+            
+            <!-- Statistics Grid -->
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Mean:</span>
+                    <span class="stat-value" id="statMean">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Std Dev:</span>
+                    <span class="stat-value" id="statStdDev">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Chi-Square:</span>
+                    <span class="stat-value" id="statChiSquare">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Base System Selector -->
+        <div class="control-group">
+            <label for="baseSystem">Number Base (2-12):</label>
+            <input type="number" id="baseSystem" min="2" max="12" value="10">
+            <button onclick="applyBase()">Apply Base</button>
+            <span class="badge badge-info" id="baseInfo">Base 10 (Decimal)</span>
+        </div>
+
+        <!-- Controls -->
+        <div class="control-group">
+            <label for="digits">Number of Digits (100-10000):</label>
+            <input type="number" id="digits" min="100" max="10000" value="100" step="100">
+        </div>
+
+        <div class="control-group">
+            <label for="calcType">Algorithm:</label>
+            <select id="calcType">
+                <option value="pi">Pi Digits</option>
+                <option value="gaussian">Gaussian Distribution</option>
+                <option value="perlin">Perlin Noise</option>
+                <option value="lcg">Linear Congruential Generator</option>
+                <option value="mersenne">Mersenne Twister</option>
+                <option value="logistic">Logistic Map</option>
+                <option value="middleSquare">Middle-Square Method</option>
+                <option value="xorshift">Xorshift</option>
+                <option value="quantum">Quantum Random (API)</option>
+                <option value="rule30">Cellular Automaton Rule 30</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="updateFrequency">Update Frequency:</label>
+            <select id="updateFrequency">
+                <option value="Every 10 digits">Every 10 digits</option>
+                <option value="Every 50 digits" selected>Every 50 digits</option>
+                <option value="Every 100 digits">Every 100 digits</option>
+                <option value="Every 500 digits">Every 500 digits</option>
+            </select>
+        </div>
+
+        <div class="button-group">
+            <button onclick="calculate()">Calculate</button>
+            <button id="pauseBtn" onclick="pauseResume()">Pause</button>
+            <button onclick="reset()">Reset</button>
+        </div>
+
+        <!-- Guess Section -->
+        <div id="guessSection" class="guess-section">
+            <h3>Guess Which Digit Will Have the Most Instances</h3>
+            <input type="text" id="guess" placeholder="Enter digit (e.g., 0-9, A, B)" maxlength="1">
+            <button id="submitGuess" onclick="submitGuess()">Submit Guess</button>
+            <button onclick="toggleGuessSection()">Hide Guess Section</button>
+            <p id="guessResult"></p>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span>Live Digit: <strong id="liveDigit">Not started</strong></span>
+            <span>Processed: <strong id="processedCount">0</strong> digits</span>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-container">
+            <canvas id="digitChart"></canvas>
+        </div>
+
+        <!-- Results -->
+        <div class="results">
+            <div id="summaryReport"></div>
+            <div class="digit-output">
+                <h3>Generated Digits:</h3>
+                <textarea id="digitSequence" readonly placeholder="Digits will appear here as they are generated..."></textarea>
+                <button onclick="copyDigits()">Copy Digits</button>
+            </div>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>

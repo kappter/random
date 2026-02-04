@@ -1,511 +1,925 @@
-let myChart;
-let counts = new Array(10).fill(0);
+// Global variables
+let myChart = null;
+let currentBase = 10;
+let counts = [];
+let digitLabels = [];
+let digitColors = [];
 let submittedGuess = null;
+let isCalculating = false;
+let isPaused = false;
+let digitGenerator = null;
+let currentDigitIndex = 0;
 
-// Monochromatic color palette: brightest from digit 0 to deep dark blue (0, 0, 139) at digit 9
-const baseBlue = [0, 0, 139]; // Deep dark blue
-const digitColors = Array.from({ length: 10 }, (_, i) => {
-  const lightness = (9 - i) * 20; // Decrease lightness from 180 (brightest) to 0 (base blue)
-  return `rgb(${Math.min(baseBlue[0] + lightness, 255)}, ${Math.min(baseBlue[1] + lightness, 255)}, ${baseBlue[2] + lightness})`;
-});
-const digitBorderColors = digitColors.map(color => color.replace('rgb', 'rgba').replace(')', ', 0.8)'));
+// Base system names
+const BaseNames = {
+  2: 'Binary', 3: 'Ternary', 4: 'Quaternary', 5: 'Quinary',
+  6: 'Senary', 7: 'Septenary', 8: 'Octal', 9: 'Nonary',
+  10: 'Decimal', 11: 'Undecimal', 12: 'Duodecimal'
+};
 
-function initializeChart() {
-  console.log('Initializing chart');
+// Algorithm metadata with categories
+const AlgorithmMetadata = {
+  // Classic Algorithms
+  pi: {
+    name: 'Pi Digits',
+    type: 'Deterministic',
+    distribution: 'Uniform (Expected)',
+    description: 'Uses the digits of Pi. While deterministic, Pi digits are expected to be uniformly distributed across all bases.',
+    basicInfo: 'Pi (π) is a mathematical constant representing the ratio of a circle\'s circumference to its diameter. Its decimal representation is infinite and non-repeating, with digits that appear statistically random despite being completely deterministic.',
+    technicalInfo: 'Uses precomputed digits of Pi in base 10. The digits pass many statistical randomness tests (chi-square, runs test, serial correlation) but are not cryptographically secure. Period: infinite (non-repeating).',
+    useCases: 'Educational demonstrations, testing statistical analysis software, benchmarking digit extraction algorithms, mathematical research on normal numbers.',
+    compatibleBases: [10],
+    category: 'classic'
+  },
+  middleSquare: {
+    name: 'Middle-Square Method',
+    type: 'Pseudo-random',
+    distribution: 'Uniform (with cycles)',
+    description: 'Von Neumann\'s classic method from 1946. May enter short cycles, requiring reseeding.',
+    basicInfo: 'One of the first PRNGs, invented by John von Neumann. Squares a number and extracts the middle digits as the next random number. Simple to understand but has serious flaws including short cycles.',
+    technicalInfo: 'Algorithm: seed² → extract middle digits → new seed. Cycle detection implemented to reseed when stuck. Not suitable for serious applications due to poor statistical properties and short periods.',
+    useCases: 'Computer science education, demonstrating PRNG concepts, historical interest. Not recommended for production use.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'classic'
+  },
+  lcg: {
+    name: 'Linear Congruential Generator',
+    type: 'Pseudo-random',
+    distribution: 'Uniform',
+    description: 'Classic PRNG using linear recurrence. Fast but has known statistical weaknesses.',
+    basicInfo: 'One of the oldest and most well-known PRNG algorithms. Uses a simple linear equation to generate the next number from the previous one. Fast and memory-efficient but has correlation issues.',
+    technicalInfo: 'Formula: X(n+1) = (a × X(n) + c) mod m. Parameters: a=1103515245, c=12345, m=2³¹. Fails spectral test in higher dimensions. Not cryptographically secure.',
+    useCases: 'Quick simulations, games, non-critical random number generation, embedded systems with limited resources. Replaced by better PRNGs in modern applications.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'classic'
+  },
+  randu: {
+    name: 'RANDU ⚠️',
+    type: 'Pseudo-random (FLAWED)',
+    distribution: 'Uniform (with patterns)',
+    description: 'IBM\'s infamous 1960s PRNG. Educational example of what NOT to do - shows clear patterns in 3D plots.',
+    basicInfo: 'RANDU is a cautionary tale in computer science. Used by IBM in the 1960s-70s, it was later discovered to have severe flaws. When plotted in 3D, consecutive triplets fall on just 15 planes instead of filling space randomly.',
+    technicalInfo: 'Formula: X(n+1) = 65539 × X(n) mod 2³¹. The multiplier 65539 = 2¹⁶ + 3 causes severe correlation. Fails spectral test catastrophically. Never use in production!',
+    useCases: 'Computer science education (as a negative example), demonstrating the importance of proper PRNG testing, historical research on computational errors.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'classic',
+    warning: true
+  },
+  
+  // Modern PRNGs
+  pcg: {
+    name: 'PCG (Permuted Congruential)',
+    type: 'Pseudo-random',
+    distribution: 'Uniform',
+    description: 'Modern PRNG from 2014. Uses permutation functions on LCG output for excellent statistical properties.',
+    basicInfo: 'PCG (Permuted Congruential Generator) was developed by Melissa O\'Neill in 2014 to address weaknesses in traditional LCGs. It applies permutation functions to LCG output, dramatically improving statistical quality while maintaining speed.',
+    technicalInfo: 'Combines LCG with XOR-shift and rotation permutations. Passes TestU01 BigCrush suite. Small state size (64-128 bits). Much faster than Mersenne Twister with better statistical properties.',
+    useCases: 'Modern game development, scientific simulations, general-purpose random number generation, replacing older PRNGs in new codebases.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'modern'
+  },
+  xoshiro: {
+    name: 'Xoshiro256++',
+    type: 'Pseudo-random',
+    distribution: 'Uniform',
+    description: 'State-of-the-art PRNG from 2018. Extremely fast with excellent quality. Uses XOR/shift/rotate operations.',
+    basicInfo: 'Xoshiro256++ (XOR/Shift/Rotate) is currently considered the gold standard for general-purpose PRNGs. Created by David Blackman and Sebastiano Vigna in 2018, it\'s the successor to the Xorshift family.',
+    technicalInfo: 'Uses 256-bit state with XOR, shift, and rotate operations. Period: 2²⁵⁶-1. Passes all known statistical tests including PractRand and TestU01. Extremely fast on modern CPUs.',
+    useCases: 'Default PRNG for new projects, high-performance simulations, game engines, scientific computing, any application requiring fast, high-quality random numbers.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'modern'
+  },
+  mersenne: {
+    name: 'Mersenne Twister',
+    type: 'Pseudo-random',
+    distribution: 'Uniform',
+    description: 'High-quality PRNG with very long period (2^19937-1). Widely used in scientific computing.',
+    basicInfo: 'Developed in 1997 by Makoto Matsumoto and Takuji Nishimura, Mersenne Twister became the most widely used PRNG for two decades. Named after Mersenne prime numbers, it has an extraordinarily long period.',
+    technicalInfo: 'Period: 2¹⁹⁹³⁷-1 (a Mersenne prime). State size: 2.5KB. Passes most statistical tests but fails some linearity tests. Not cryptographically secure. Slower than modern alternatives like Xoshiro.',
+    useCases: 'Scientific computing, Monte Carlo simulations, statistical software (R, Python NumPy default until recently), legacy code requiring compatibility.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'modern'
+  },
+  xorshift: {
+    name: 'Xorshift',
+    type: 'Pseudo-random',
+    distribution: 'Uniform',
+    description: 'Fast PRNG using bitwise XOR operations. Good statistical properties with minimal state.',
+    basicInfo: 'Invented by George Marsaglia in 2003, Xorshift uses only XOR and bit-shift operations, making it extremely simple and fast. It\'s the predecessor to the Xoshiro family.',
+    technicalInfo: 'Uses XOR with left and right shifts. Minimal state (32-128 bits). Very fast but has some statistical weaknesses. Fails linearity tests. Superseded by Xoshiro but still useful for simple applications.',
+    useCases: 'Embedded systems, games requiring fast random numbers, situations where simplicity is valued, educational purposes to understand XOR-based PRNGs.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'modern'
+  },
+  
+  // Mathematical/Chaotic
+  gaussian: {
+    name: 'Gaussian Distribution',
+    type: 'Pseudo-random',
+    distribution: 'Normal (Bell Curve)',
+    description: 'Generates digits using Box-Muller transform. Creates a bell curve centered at the middle digit.',
+    basicInfo: 'The Gaussian (normal) distribution is the famous "bell curve" that appears throughout nature and statistics. This implementation uses the Box-Muller transform to convert uniform random numbers into normally distributed ones.',
+    technicalInfo: 'Box-Muller transform: converts two uniform random variables into two independent Gaussian variables using trigonometric functions. Mean and standard deviation adapted for each base to keep values in range.',
+    useCases: 'Statistical simulations, modeling natural phenomena (heights, test scores, measurement errors), machine learning (weight initialization), financial modeling.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'mathematical'
+  },
+  logistic: {
+    name: 'Logistic Map',
+    type: 'Chaotic',
+    distribution: 'Non-uniform (Chaotic)',
+    description: 'Generates digits from chaotic dynamics. Deterministic but highly sensitive to initial conditions.',
+    basicInfo: 'The logistic map is a simple mathematical equation that exhibits chaotic behavior. Despite being completely deterministic (x(n+1) = r × x(n) × (1 - x(n))), tiny changes in initial conditions lead to completely different sequences.',
+    technicalInfo: 'Parameter r = 3.99 places the system in chaotic regime. Demonstrates sensitive dependence on initial conditions ("butterfly effect"). Not suitable for cryptography due to predictability from state.',
+    useCases: 'Chaos theory education, demonstrating deterministic chaos, population dynamics modeling, exploring nonlinear dynamics, artistic applications.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'mathematical'
+  },
+  perlin: {
+    name: 'Perlin Noise',
+    type: 'Pseudo-random',
+    distribution: 'Smooth Random',
+    description: 'Uses Perlin noise for natural-looking randomness with smooth transitions between values.',
+    basicInfo: 'Invented by Ken Perlin in 1983 for the movie Tron, Perlin noise creates smooth, natural-looking randomness. Unlike white noise, it has coherent structure with smooth gradients between values.',
+    technicalInfo: 'Uses gradient noise with interpolation (fade function: 6t⁵ - 15t⁴ + 10t³). Creates continuous, differentiable noise. Often used in multiple octaves for fractal-like detail.',
+    useCases: 'Procedural terrain generation, texture synthesis, cloud rendering, organic-looking animations, game development (Minecraft terrain), visual effects.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'mathematical'
+  },
+  
+  // Quasi-Random
+  sobol: {
+    name: 'Sobol Sequence',
+    type: 'Quasi-random',
+    distribution: 'Low-discrepancy',
+    description: 'Not truly random - fills space evenly. Used in Monte Carlo simulations for better coverage than random.',
+    basicInfo: 'Sobol sequences are quasi-random (low-discrepancy) sequences that fill space more uniformly than random numbers. Developed by Ilya Sobol in 1967, they avoid clustering and gaps that occur with true randomness.',
+    technicalInfo: 'Based on binary van der Corput sequence with direction numbers. Achieves O((log N)^d / N) discrepancy. Deterministic but appears random. Better convergence than pseudo-random for integration.',
+    useCases: 'Monte Carlo integration, quasi-Monte Carlo methods, financial modeling (option pricing), computer graphics (ray tracing), numerical optimization, sensitivity analysis.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'quasi'
+  },
+  
+  // Cryptographic/True Random
+  quantum: {
+    name: 'Quantum Random (API)',
+    type: 'True Random',
+    distribution: 'Uniform',
+    description: 'Fetches true random numbers from quantum measurements. Falls back to LCG if API unavailable.',
+    basicInfo: 'True random numbers generated from quantum phenomena (vacuum fluctuations) measured by the Australian National University. Unlike pseudo-random algorithms, quantum randomness is fundamentally unpredictable.',
+    technicalInfo: 'Uses ANU QRNG API which measures quantum vacuum state. Truly random (not deterministic). Requires internet connection. Slower than PRNGs due to API latency. Suitable for cryptography.',
+    useCases: 'Cryptographic key generation, lottery systems, scientific experiments requiring true randomness, security applications, gambling, unbiased sampling.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'crypto'
+  },
+  rule30: {
+    name: 'Cellular Automaton Rule 30',
+    type: 'Chaotic',
+    distribution: 'Complex',
+    description: 'Generates digits from Rule 30 cellular automaton evolution. Shows complex, random-like patterns.',
+    basicInfo: 'Rule 30 is a one-dimensional cellular automaton discovered by Stephen Wolfram. Despite having extremely simple rules, it produces complex, seemingly random patterns. Wolfram proposed using it as a random number generator.',
+    technicalInfo: 'Binary rule: 00011110 (30 in decimal). Updates each cell based on itself and two neighbors. Center column used for random bits. Passes many statistical tests but has some subtle patterns.',
+    useCases: 'Random number generation in Mathematica, studying emergence of complexity from simple rules, demonstrating computational irreducibility, art and pattern generation.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    category: 'crypto'
+  }
+};
+
+// Category display names
+const CategoryNames = {
+  classic: 'Classic Algorithms',
+  modern: 'Modern PRNGs',
+  mathematical: 'Mathematical/Chaotic',
+  quasi: 'Quasi-Random',
+  crypto: 'Cryptographic/True Random'
+};
+
+// Base configuration
+function initializeBase(base) {
+  currentBase = base;
+  digitLabels = generateLabels(base);
+  digitColors = generateColors(base);
+  counts = new Array(base).fill(0);
+  
+  // Update base info display
+  const baseInfo = document.getElementById('baseInfo');
+  if (baseInfo) {
+    baseInfo.textContent = `Base ${base} (${BaseNames[base]})`;
+  }
+  
+  // Update algorithm dropdown compatibility
+  updateAlgorithmCompatibility();
+  
+  // Recreate chart
+  createChart();
+  
+  // Update guess placeholder
+  const guessInput = document.getElementById('guess');
+  if (base <= 10) {
+    guessInput.placeholder = `Enter digit (0-${base-1})`;
+  } else {
+    const lastDigit = String.fromCharCode(55 + base); // A=10, B=11
+    guessInput.placeholder = `Enter digit (0-9, A-${lastDigit})`;
+  }
+}
+
+function generateLabels(base) {
+  const labels = [];
+  for (let i = 0; i < base; i++) {
+    if (i < 10) {
+      labels.push(i.toString());
+    } else {
+      // Use A, B for bases 11-12
+      labels.push(String.fromCharCode(65 + i - 10));
+    }
+  }
+  return labels;
+}
+
+function generateColors(base) {
+  const colors = [];
+  for (let i = 0; i < base; i++) {
+    const hue = (240 - (i / (base - 1)) * 60); // Blue (240) to darker blue (180)
+    colors.push(`hsl(${hue}, 70%, ${60 - i * 2}%)`);
+  }
+  return colors;
+}
+
+function updateAlgorithmCompatibility() {
+  const calcTypeSelect = document.getElementById('calcType');
+  const currentValue = calcTypeSelect.value;
+  let firstCompatible = null;
+  
+  // Clear and rebuild options
+  calcTypeSelect.innerHTML = '';
+  
+  // Group algorithms by category
+  const categories = ['classic', 'modern', 'mathematical', 'quasi', 'crypto'];
+  
+  categories.forEach(category => {
+    const algorithmsInCategory = Object.entries(AlgorithmMetadata)
+      .filter(([_, meta]) => meta.category === category);
+    
+    if (algorithmsInCategory.length > 0) {
+      // Add category header
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = CategoryNames[category];
+      
+      algorithmsInCategory.forEach(([key, meta]) => {
+        const option = document.createElement('option');
+        option.value = key;
+        
+        const isCompatible = meta.compatibleBases.includes(currentBase);
+        
+        if (isCompatible) {
+          option.textContent = meta.name;
+          option.disabled = false;
+          if (firstCompatible === null) {
+            firstCompatible = key;
+          }
+        } else {
+          option.textContent = `${meta.name} (Not available for base ${currentBase})`;
+          option.disabled = true;
+        }
+        
+        optgroup.appendChild(option);
+      });
+      
+      calcTypeSelect.appendChild(optgroup);
+    }
+  });
+  
+  // Select appropriate algorithm
+  const currentMeta = AlgorithmMetadata[currentValue];
+  if (currentMeta && currentMeta.compatibleBases.includes(currentBase)) {
+    calcTypeSelect.value = currentValue;
+  } else if (firstCompatible) {
+    calcTypeSelect.value = firstCompatible;
+  }
+  
+  // Update algorithm info
+  updateAlgorithmInfo();
+}
+
+function updateAlgorithmInfo() {
+  const calcType = document.getElementById('calcType').value;
+  const meta = AlgorithmMetadata[calcType];
+  
+  if (!meta) return;
+  
+  document.getElementById('algorithmName').textContent = `Algorithm: ${meta.name}`;
+  document.getElementById('algorithmType').textContent = meta.type;
+  document.getElementById('algorithmDistribution').textContent = meta.distribution;
+  document.getElementById('algorithmDescription').textContent = meta.description;
+  
+  // Update detailed information sections
+  document.getElementById('algorithmBasicInfo').textContent = meta.basicInfo || 'No additional information available.';
+  document.getElementById('algorithmTechnicalInfo').textContent = meta.technicalInfo || 'No technical details available.';
+  document.getElementById('algorithmUseCases').textContent = meta.useCases || 'General purpose random number generation.';
+  
+  // Add warning styling if needed
+  const infoPanel = document.querySelector('.algorithm-info');
+  if (meta.warning) {
+    infoPanel.style.background = 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)';
+  } else {
+    infoPanel.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+  }
+}
+
+// Create chart
+function createChart() {
   const ctx = document.getElementById('digitChart').getContext('2d');
+  
+  if (myChart) {
+    myChart.destroy();
+  }
+  
   myChart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+      labels: digitLabels,
       datasets: [{
-        label: 'Digit Counts',
-        data: new Array(10).fill(0),
+        label: 'Count',
+        data: counts,
         backgroundColor: digitColors,
-        borderColor: digitBorderColors,
-        borderWidth: 1
+        borderColor: digitColors.map(c => c.replace('60%', '40%')),
+        borderWidth: 2
       }]
     },
     options: {
-      responsive: false,
-      maintainAspectRatio: false,
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: `Digit Frequency Distribution (Base ${currentBase})`,
+          font: { size: 16, weight: 'bold' }
+        },
+        datalabels: {
+          anchor: 'center',
+          align: 'center',
+          formatter: (value) => {
+            const tallies = Math.floor(value / 5);
+            return tallies > 0 ? tallies : '';
+          },
+          color: '#fff',
+          font: { size: 14, weight: 'bold' }
+        }
+      },
       scales: {
         y: {
           beginAtZero: true,
-          title: { display: true, text: 'Count' },
-          ticks: { stepSize: 100 },
-          suggestedMax: 600
+          title: { display: true, text: 'Count' }
         },
         x: {
-          title: { display: true, text: 'Digits' }
+          title: { display: true, text: `Digits (Base ${currentBase})` }
         }
-      },
-      plugins: {
-        datalabels: {
-          display: true, // Always show labels
-          anchor: 'center',
-          align: 'center',
-          offset: 0,
-          formatter: (value, context) => {
-            const tally = Math.floor(value / 5) + (value % 5 > 0 ? 1 : 0);
-            return `${tally}`; // Superimposed tally
-          },
-          color: '#fff',
-          font: { weight: 'bold', size: 16 },
-          textAlign: 'center'
-        },
-        annotation: {
-          annotations: []
-        }
-      },
-      animation: {
-        duration: 200,
-        easing: 'easeInOutQuad'
       }
-    }
+    },
+    plugins: [ChartDataLabels]
   });
-  return myChart;
 }
 
-function updateChartData(chart, data, target) {
-  console.log('Updating chart data with counts:', data);
-  // Find all digits with the highest count for highlighting
-  const maxCount = Math.max(...data);
-  const winningDigits = data.reduce((winners, count, index) => {
-    if (count === maxCount) winners.push(index);
-    return winners;
-  }, []);
-
-  // Update colors: dark red for all winners, original colors for others
-  chart.data.datasets[0].backgroundColor = data.map((_, i) => 
-    winningDigits.includes(i) ? 'rgb(139, 0, 0)' : digitColors[i]
-  );
-  chart.data.datasets[0].borderColor = data.map((_, i) => 
-    winningDigits.includes(i) ? 'rgba(139, 0, 0, 0.8)' : digitBorderColors[i]
-  );
-  chart.data.datasets[0].data = [...data];
-  chart.options.scales.y.suggestedMax = Math.max(...data, 1) * 1.2;
-
-  // Add count labels as a secondary annotation (superimposed above tally)
-  chart.options.plugins.annotation.annotations = data.map((value, index) => ({
-    type: 'label',
-    xValue: index,
-    yValue: value + 5, // Offset above the bar
-    content: [`Count: ${value}`],
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 4,
-    padding: 6,
-    color: '#000',
-    font: { weight: 'bold', size: 14 },
-    textAlign: 'center'
-  }));
-
-  chart.update();
+// Statistics calculation
+function calculateStatistics() {
+  const total = counts.reduce((sum, c) => sum + c, 0);
+  if (total === 0) return { mean: 0, stdDev: 0, chiSquare: 0 };
+  
+  // Mean
+  const mean = counts.reduce((sum, count, digit) => sum + digit * count, 0) / total;
+  
+  // Standard deviation
+  const variance = counts.reduce((sum, count, digit) => {
+    return sum + count * Math.pow(digit - mean, 2);
+  }, 0) / total;
+  const stdDev = Math.sqrt(variance);
+  
+  // Chi-square test
+  const expected = total / currentBase;
+  const chiSquare = counts.reduce((sum, count) => {
+    return sum + Math.pow(count - expected, 2) / expected;
+  }, 0);
+  
+  return { mean, stdDev, chiSquare };
 }
 
-// Pi digit generator (precomputed array)
-function* generatePiDigits(numDigits) {
-  const piDigits = [
-    3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3, 2, 3, 8, 4,
-    6, 2, 6, 4, 3, 3, 8, 3, 2, 7, 9, 5, 0, 2, 8, 8, 4, 1, 9, 7,
-    1, 6, 9, 3, 9, 9, 3, 7, 5, 1, 0, 5, 8, 2, 0, 9, 7, 4, 9, 4,
-    4, 5, 9, 2, 3, 0, 7, 8, 1, 6, 4, 0, 6, 2, 8, 6, 2, 0, 8, 9,
-    9, 8, 6, 2, 8, 0, 3, 4, 8, 2, 5, 3, 4, 2, 1, 1, 7, 0, 6, 7
-  ];
-  let index = 0;
-  while (index < numDigits) {
-    const digit = piDigits[index % piDigits.length];
+function updateStatistics() {
+  const stats = calculateStatistics();
+  document.getElementById('statMean').textContent = stats.mean.toFixed(2);
+  document.getElementById('statStdDev').textContent = stats.stdDev.toFixed(2);
+  document.getElementById('statChiSquare').textContent = stats.chiSquare.toFixed(2);
+}
+
+// ============= ALGORITHM IMPLEMENTATIONS =============
+
+// PCG (Permuted Congruential Generator)
+function* pcgGenerator(base) {
+  let state = Date.now() % 0xFFFFFFFF;
+  const multiplier = 747796405;
+  const increment = 2891336453;
+  
+  while (true) {
+    // LCG step
+    state = (multiplier * state + increment) >>> 0;
+    
+    // Permutation: XOR-shift and rotate
+    const xorshifted = (((state >>> 18) ^ state) >>> 27) >>> 0;
+    const rot = state >>> 59;
+    const output = ((xorshifted >>> rot) | (xorshifted << ((-rot) & 31))) >>> 0;
+    
+    // Map to base
+    const digit = output % base;
     yield digit;
+  }
+}
+
+// Xoshiro256++
+function* xoshiroGenerator(base) {
+  // Initialize state with seed
+  const seed = Date.now();
+  let s0 = seed >>> 0;
+  let s1 = (seed * 1103515245 + 12345) >>> 0;
+  let s2 = (s1 * 1103515245 + 12345) >>> 0;
+  let s3 = (s2 * 1103515245 + 12345) >>> 0;
+  
+  const rotl = (x, k) => ((x << k) | (x >>> (32 - k))) >>> 0;
+  
+  while (true) {
+    const result = (rotl((s0 + s3) >>> 0, 7) + s0) >>> 0;
+    const t = (s1 << 9) >>> 0;
+    
+    s2 ^= s0;
+    s3 ^= s1;
+    s1 ^= s2;
+    s0 ^= s3;
+    s2 ^= t;
+    s3 = rotl(s3, 11);
+    
+    const digit = result % base;
+    yield digit;
+  }
+}
+
+// RANDU (intentionally flawed)
+function* randuGenerator(base) {
+  let seed = Date.now() % 2147483647;
+  if (seed === 0) seed = 1;
+  
+  while (true) {
+    seed = (65539 * seed) % 2147483648;
+    const value = seed / 2147483648;
+    const digit = Math.floor(value * base) % base;
+    yield digit;
+  }
+}
+
+// Sobol Sequence (simplified 1D version)
+function* sobolGenerator(base) {
+  let index = 1;
+  const directionNumbers = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048];
+  
+  while (true) {
+    let value = 0;
+    let i = index;
+    let j = 0;
+    
+    while (i > 0) {
+      if (i & 1) {
+        value ^= directionNumbers[j];
+      }
+      i >>= 1;
+      j++;
+    }
+    
+    // Normalize to [0, 1)
+    const normalized = value / 4096;
+    const digit = Math.floor(normalized * base) % base;
+    
+    index++;
+    yield digit;
+  }
+}
+
+// Pi Digits (existing - base 10 only)
+function* piGenerator(base) {
+  const piDigits = "31415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679";
+  let index = 0;
+  
+  while (index < piDigits.length) {
+    yield parseInt(piDigits[index]);
+    index++;
+  }
+  
+  // If we run out, loop
+  while (true) {
+    yield parseInt(piDigits[index % piDigits.length]);
     index++;
   }
 }
 
-// Gaussian digit generator (Box-Muller transform)
-function* generateGaussianDigits(numDigits) {
-  let index = 0;
-  while (index < numDigits) {
+// Gaussian Distribution
+function* gaussianGenerator(base) {
+  const mean = (base - 1) / 2;
+  const stdDev = base / 6;
+  
+  while (true) {
     const u1 = Math.random();
     const u2 = Math.random();
-    const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-    const digit = Math.round(4.5 + 1.5 * z);
-    const clampedDigit = Math.max(0, Math.min(9, digit));
-    yield clampedDigit;
-    index++;
+    const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    const value = Math.round(mean + stdDev * z0);
+    const digit = Math.max(0, Math.min(base - 1, value));
+    yield digit;
   }
 }
 
-// Perlin noise implementation
-function perlinNoise(x, seed = 0) {
-  const perm = Array(256).fill(0).map((_, i) => i);
-  for (let i = 255; i > 0; i--) {
-    const j = Math.floor((seed + i) % (i + 1));
-    [perm[i], perm[j]] = [perm[j], perm[i]];
-  }
-  const p = new Uint8Array(512);
-  for (let i = 0; i < 512; i++) p[i] = perm[i % 256];
-
-  const xi = Math.floor(x) & 255;
-  const xf = x - Math.floor(x);
-  const u = xf * xf * (3 - 2 * xf);
-  const a = p[xi];
-  const b = p[xi + 1];
-  const g1 = (p[a] % 2 ? -1 : 1) * (p[a] % 100) / 100;
-  const g2 = (p[b] % 2 ? -1 : 1) * (p[b] % 100) / 100;
-  return g1 + u * (g2 - g1);
-}
-
-// Perlin digit generator
-function* generatePerlinDigits(numDigits) {
-  let index = 0;
-  const seed = Math.random() * 1000;
-  while (index < numDigits) {
-    const noise = perlinNoise(index * 0.1, seed);
-    const digit = Math.floor(((noise + 1) / 2) * 10);
-    const clampedDigit = Math.max(0, Math.min(9, digit));
-    yield clampedDigit;
-    index++;
+// Perlin Noise
+function* perlinGenerator(base) {
+  let x = Math.random() * 1000;
+  const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
+  const lerp = (a, b, t) => a + t * (b - a);
+  
+  while (true) {
+    const xi = Math.floor(x) & 255;
+    const xf = x - Math.floor(x);
+    const u = fade(xf);
+    
+    const a = (xi * 2654435761) % 256;
+    const b = ((xi + 1) * 2654435761) % 256;
+    const value = lerp(a / 256, b / 256, u);
+    
+    const digit = Math.floor(value * base) % base;
+    yield digit;
+    
+    x += 0.1;
   }
 }
 
-// Linear Congruential Generator (LCG) digit generator
-function* generateLCGDigits(numDigits) {
-  let index = 0;
-  let seed = Date.now() % 4294967296; // Use current timestamp as seed
-  const a = 1664525;
-  const c = 1013904223;
-  const m = 2**32; // Modulus
-  while (index < numDigits) {
+// LCG
+function* lcgGenerator(base) {
+  let seed = Date.now() % 2147483647;
+  const a = 1103515245;
+  const c = 12345;
+  const m = 2147483648;
+  
+  while (true) {
     seed = (a * seed + c) % m;
-    const value = seed / m; // Normalize to [0, 1)
-    const digit = Math.floor(value * 10); // Map to 0-9
+    const value = seed / m;
+    const digit = Math.floor(value * base) % base;
     yield digit;
-    index++;
   }
 }
 
-// Mersenne Twister implementation (simplified)
-function* generateMersenneDigits(numDigits) {
+// Mersenne Twister (simplified)
+function* mersenneGenerator(base) {
+  const MT = new Array(624);
   let index = 0;
-  const seed = Date.now();
-  let mt = new Array(624);
-  let mtIndex = 0;
-
-  // Initialize the MT array
-  mt[0] = seed;
-  for (let i = 1; i < 624; i++) {
-    mt[i] = (1812433253 * (mt[i - 1] ^ (mt[i - 1] >> 30)) + i) & 0xffffffff;
+  
+  function initializeMT(seed) {
+    MT[0] = seed >>> 0;
+    for (let i = 1; i < 624; i++) {
+      MT[i] = (1812433253 * (MT[i-1] ^ (MT[i-1] >>> 30)) + i) >>> 0;
+    }
   }
-
-  function twist() {
+  
+  function generateNumbers() {
     for (let i = 0; i < 624; i++) {
-      const y = (mt[i] & 0x80000000) + (mt[(i + 1) % 624] & 0x7fffffff);
-      mt[i] = mt[(i + 397) % 624] ^ (y >> 1);
-      if (y % 2 !== 0) mt[i] ^= 0x9908b0df;
+      const y = (MT[i] & 0x80000000) + (MT[(i+1) % 624] & 0x7fffffff);
+      MT[i] = MT[(i + 397) % 624] ^ (y >>> 1);
+      if (y % 2 !== 0) {
+        MT[i] ^= 2567483615;
+      }
     }
   }
-
+  
   function extractNumber() {
-    if (mtIndex === 0) twist();
-    let y = mt[mtIndex];
-    y ^= (y >> 11);
-    y ^= (y << 7) & 0x9d2c5680;
-    y ^= (y << 15) & 0xefc60000;
-    y ^= (y >> 18);
-    mtIndex = (mtIndex + 1) % 624;
-    return y & 0xffffffff;
-  }
-
-  while (index < numDigits) {
-    const value = extractNumber() / 0xffffffff; // Normalize to [0, 1)
-    const digit = Math.floor(value * 10);
-    yield digit;
-    index++;
-  }
-}
-
-// Logistic Map digit generator
-function* generateLogisticDigits(numDigits) {
-  let index = 0;
-  let x = 0.1; // Initial value
-  const r = 3.9; // Chaos parameter
-  while (index < numDigits) {
-    x = r * x * (1 - x);
-    const digit = Math.floor(x * 10); // Map [0, 1) to 0-9
-    yield digit;
-    index++;
-  }
-}
-
-// Middle-Square Method digit generator (with cycle detection)
-function* generateMiddleSquareDigits(numDigits) {
-  let index = 0;
-  let seed = (Date.now() % 9000) + 1000; // 4-digit seed
-  const seen = new Set();
-  while (index < numDigits) {
-    const squared = seed * seed;
-    const squaredStr = squared.toString().padStart(8, '0');
-    seed = parseInt(squaredStr.slice(2, 6)); // Take middle 4 digits
-    if (seed === 0 || seen.has(seed)) {
-      seed = (Date.now() % 9000) + 1000; // Reseed if cycle detected
-      seen.clear();
+    if (index === 0) {
+      generateNumbers();
     }
-    seen.add(seed);
-    const digit = Math.floor((seed / 10000) * 10); // Map to 0-9
+    
+    let y = MT[index];
+    y ^= y >>> 11;
+    y ^= (y << 7) & 2636928640;
+    y ^= (y << 15) & 4022730752;
+    y ^= y >>> 18;
+    
+    index = (index + 1) % 624;
+    return y >>> 0;
+  }
+  
+  initializeMT(Date.now());
+  
+  while (true) {
+    const value = extractNumber();
+    const digit = value % base;
     yield digit;
-    index++;
   }
 }
 
-// Xorshift digit generator
-function* generateXorshiftDigits(numDigits) {
-  let index = 0;
-  let x = Date.now() % 4294967296;
-  while (index < numDigits) {
-    x ^= x << 13;
-    x ^= x >> 17;
-    x ^= x << 5;
-    const value = (x & 0xffffffff) / 0xffffffff; // Normalize to [0, 1)
-    const digit = Math.floor(value * 10);
+// Logistic Map
+function* logisticGenerator(base) {
+  let x = Math.random();
+  const r = 3.99;
+  
+  while (true) {
+    x = r * x * (1 - x);
+    const digit = Math.floor(x * base) % base;
     yield digit;
-    index++;
   }
 }
 
-// Quantum Random digit generator (with LCG fallback)
-async function* generateQuantumDigits(numDigits) {
-  let index = 0;
+// Middle-Square Method
+function* middleSquareGenerator(base) {
+  let seed = Date.now() % 10000;
+  const seenValues = new Set();
+  
+  while (true) {
+    if (seenValues.has(seed)) {
+      seed = (seed + Date.now()) % 10000;
+      seenValues.clear();
+    }
+    seenValues.add(seed);
+    
+    const squared = (seed * seed).toString().padStart(8, '0');
+    const middle = squared.substring(2, 6);
+    seed = parseInt(middle);
+    
+    const digit = seed % base;
+    yield digit;
+  }
+}
+
+// Xorshift
+function* xorshiftGenerator(base) {
+  let state = Date.now() >>> 0;
+  if (state === 0) state = 1;
+  
+  while (true) {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    state >>>= 0;
+    
+    const digit = state % base;
+    yield digit;
+  }
+}
+
+// Quantum Random (API)
+async function* quantumGenerator(base) {
   try {
-    const response = await fetch('https://qrng.anu.edu.au/API/jsonI.php?length=' + Math.ceil(numDigits / 2) + '&type=uint8');
+    const response = await fetch('https://qrng.anu.edu.au/API/jsonI.php?length=100&type=uint8');
     const data = await response.json();
-    console.log('Quantum API response:', data); // Debug the response
-    if (data.success && Array.isArray(data.data)) {
-      const numbers = data.data;
-      for (let num of numbers) {
-        if (index >= numDigits) break;
-        const digit1 = Math.floor(num / 25.6); // First digit (0-9)
-        const digit2 = Math.floor((num % 25.6) / 2.56); // Second digit (0-9)
-        if (index < numDigits) {
-          yield digit1;
-          index++;
-        }
-        if (index < numDigits) {
-          yield digit2;
-          index++;
-        }
+    
+    if (data.success) {
+      for (const value of data.data) {
+        yield value % base;
       }
     } else {
-      throw new Error('Invalid API response or no data');
+      yield* lcgGenerator(base);
     }
-  } catch (err) {
-    console.error('Quantum API failed, falling back to LCG:', err);
-    // Fallback to LCG if API fails
-    for (let digit of generateLCGDigits(numDigits - index)) {
-      yield digit;
-      index++;
-    }
+  } catch (error) {
+    console.error('Quantum API failed, falling back to LCG');
+    yield* lcgGenerator(base);
   }
 }
 
-// Cellular Automaton Rule 30 digit generator
-function* generateRule30Digits(numDigits) {
-  let index = 0;
-  const width = 100; // Width of the automaton
-  let state = new Array(width).fill(0);
-  state[Math.floor(width / 2)] = 1; // Start with a single 1 in the middle
-
-  while (index < numDigits) {
-    // Apply Rule 30: left XOR (center OR right)
-    const newState = new Array(width).fill(0);
-    for (let i = 0; i < width; i++) {
-      const left = state[(i - 1 + width) % width];
-      const center = state[i];
-      const right = state[(i + 1) % width];
-      newState[i] = left ^ (center | right);
+// Rule 30 Cellular Automaton
+function* rule30Generator(base) {
+  let cells = new Array(63).fill(0);
+  cells[31] = 1;
+  
+  while (true) {
+    const newCells = new Array(63).fill(0);
+    
+    for (let i = 1; i < 62; i++) {
+      const left = cells[i-1];
+      const center = cells[i];
+      const right = cells[i+1];
+      const pattern = (left << 2) | (center << 1) | right;
+      newCells[i] = (30 >> pattern) & 1;
     }
-    state = newState;
-
-    // Extract a digit from the sum of the row (mod 10)
-    const sum = state.reduce((a, b) => a + b, 0);
-    const digit = sum % 10;
+    
+    cells = newCells;
+    const sum = cells.reduce((a, b) => a + b, 0);
+    const digit = sum % base;
     yield digit;
-    index++;
   }
 }
 
-function validateAndCalculate() {
-  const digitsInput = parseInt(document.getElementById('digits').value);
+// ============= MAIN CALCULATION LOGIC =============
+
+function getGenerator(calcType, base) {
+  switch(calcType) {
+    case 'pcg': return pcgGenerator(base);
+    case 'xoshiro': return xoshiroGenerator(base);
+    case 'randu': return randuGenerator(base);
+    case 'sobol': return sobolGenerator(base);
+    case 'pi': return piGenerator(base);
+    case 'gaussian': return gaussianGenerator(base);
+    case 'perlin': return perlinGenerator(base);
+    case 'lcg': return lcgGenerator(base);
+    case 'mersenne': return mersenneGenerator(base);
+    case 'logistic': return logisticGenerator(base);
+    case 'middleSquare': return middleSquareGenerator(base);
+    case 'xorshift': return xorshiftGenerator(base);
+    case 'quantum': return quantumGenerator(base);
+    case 'rule30': return rule30Generator(base);
+    default: return lcgGenerator(base);
+  }
+}
+
+async function calculate() {
+  if (isCalculating) return;
+  
+  isCalculating = true;
+  isPaused = false;
+  document.getElementById('pauseBtn').textContent = 'Pause';
+  
+  const digits = parseInt(document.getElementById('digits').value);
   const calcType = document.getElementById('calcType').value;
-  if (isNaN(digitsInput) || digitsInput < 100 || digitsInput > 10000) {
-    alert('Please enter a number between 100 and 10000.');
-    return;
-  }
-  calculateDigits(digitsInput, calcType);
-}
-
-function submitGuess() {
-  const guess = parseInt(document.getElementById('guess').value);
-  if (isNaN(guess) || guess < 0 || guess > 9) {
-    alert('Please enter a valid digit (0-9) for your guess.');
-    return;
-  }
-  submittedGuess = guess;
-  document.getElementById('guessResult').textContent = `Guess submitted: Digit ${guess}`;
-  document.getElementById('guess').disabled = true;
-  document.getElementById('submitGuess').disabled = true;
-}
-
-function copyDigits() {
-  const digitSequence = document.getElementById('digitSequence').value;
-  navigator.clipboard.writeText(digitSequence)
-    .then(() => {
-      alert('Digits copied to clipboard!');
-    })
-    .catch(err => {
-      console.error('Failed to copy digits:', err);
-      alert('Failed to copy digits. Please copy manually from the textbox.');
-    });
-}
-
-function calculateDigits(digits, calcType) {
-  counts = new Array(10).fill(0);
-  if (!myChart) {
-    myChart = initializeChart();
-  }
-  document.getElementById('liveDigit').textContent = 'Calculating...';
-  document.getElementById('progress').textContent = `Processed: 0/${digits} digits`;
-  document.getElementById('summaryReport').innerHTML = ''; // Clear previous report
-  document.getElementById('guess').disabled = true;
-  document.getElementById('submitGuess').disabled = true;
-  document.getElementById('digitSequence').value = ''; // Clear the textbox
-  let currentDigitIndex = 0;
-  let updateCounter = 0;
-  const updateInterval = 50;
-
-  // Select the appropriate generator based on calcType
-  let digitGenerator;
-  if (calcType === 'pi') {
-    digitGenerator = generatePiDigits(digits);
-  } else if (calcType === 'gaussian') {
-    digitGenerator = generateGaussianDigits(digits);
-  } else if (calcType === 'perlin') {
-    digitGenerator = generatePerlinDigits(digits);
-  } else if (calcType === 'lcg') {
-    digitGenerator = generateLCGDigits(digits);
-  } else if (calcType === 'mersenne') {
-    digitGenerator = generateMersenneDigits(digits);
-  } else if (calcType === 'logistic') {
-    digitGenerator = generateLogisticDigits(digits);
-  } else if (calcType === 'middleSquare') {
-    digitGenerator = generateMiddleSquareDigits(digits);
-  } else if (calcType === 'xorshift') {
-    digitGenerator = generateXorshiftDigits(digits);
-  } else if (calcType === 'quantum') {
-    // Quantum generator is async, handle it differently
-    (async () => {
-      const gen = generateQuantumDigits(digits);
-      let digitSequence = '';
-      while (currentDigitIndex < digits) {
-        const { value, done } = await gen.next();
-        if (done) break;
-        const digit = value;
-        counts[digit]++;
-        digitSequence += digit;
-        document.getElementById('liveDigit').textContent = digit;
-        document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
-        document.getElementById('digitSequence').value = digitSequence;
-
-        updateCounter++;
-        if (updateCounter >= updateInterval) {
-          const target = Math.ceil(digits / 10);
-          updateChartData(myChart, counts, target);
-          updateCounter = 0;
-        }
-
-        currentDigitIndex++;
+  const updateFreq = parseInt(document.getElementById('updateFrequency').value.split(' ')[1]);
+  
+  counts = new Array(currentBase).fill(0);
+  currentDigitIndex = 0;
+  
+  document.getElementById('digitSequence').value = '';
+  document.getElementById('liveDigit').textContent = 'Not started';
+  document.getElementById('processedCount').textContent = '0';
+  document.getElementById('summaryReport').innerHTML = '';
+  
+  digitGenerator = getGenerator(calcType, currentBase);
+  
+  const processDigits = async () => {
+    while (currentDigitIndex < digits && isCalculating) {
+      if (isPaused) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        continue;
       }
-      finalizeCalculation(digits, digitSequence);
-    })();
-    return; // Exit early for async handling
-  } else if (calcType === 'rule30') {
-    digitGenerator = generateRule30Digits(digits);
-  }
-
-  let digitSequence = '';
-
-  function updateLoop() {
-    const result = digitGenerator.next();
-    if (result.done || currentDigitIndex >= digits) {
-      finalizeCalculation(digits, digitSequence);
-      return;
+      
+      const result = await digitGenerator.next();
+      if (result.done) break;
+      
+      const digit = result.value;
+      counts[digit]++;
+      currentDigitIndex++;
+      
+      const digitStr = digitLabels[digit];
+      document.getElementById('digitSequence').value += digitStr;
+      document.getElementById('liveDigit').textContent = digitStr;
+      document.getElementById('processedCount').textContent = currentDigitIndex;
+      
+      if (currentDigitIndex % updateFreq === 0 || currentDigitIndex === digits) {
+        updateChart();
+        updateStatistics();
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
     }
-
-    const digit = result.value;
-    counts[digit]++;
-    digitSequence += digit;
-    document.getElementById('liveDigit').textContent = digit;
-    document.getElementById('progress').textContent = `Processed: ${currentDigitIndex + 1}/${digits} digits`;
-    document.getElementById('digitSequence').value = digitSequence;
-
-    updateCounter++;
-    if (updateCounter >= updateInterval) {
-      const target = Math.ceil(digits / 10);
-      updateChartData(myChart, counts, target);
-      updateCounter = 0;
+    
+    if (currentDigitIndex >= digits) {
+      finishCalculation();
     }
-
-    currentDigitIndex++;
-    requestAnimationFrame(updateLoop);
-  }
-
-  requestAnimationFrame(updateLoop);
+  };
+  
+  await processDigits();
 }
 
-function finalizeCalculation(digits, digitSequence) {
-  console.log('Final chart update');
-  const target = Math.ceil(digits / 10); // Example target: 10% of digits
-  updateChartData(myChart, counts, target);
+function updateChart() {
+  myChart.data.datasets[0].data = [...counts];
+  
+  const maxCount = Math.max(...counts);
+  const winnerIndices = counts.map((c, i) => c === maxCount ? i : -1).filter(i => i >= 0);
+  
+  myChart.data.datasets[0].backgroundColor = digitColors.map((color, i) => 
+    winnerIndices.includes(i) ? '#8B0000' : color
+  );
+  
+  myChart.update('none');
+}
+
+function finishCalculation() {
+  isCalculating = false;
   document.getElementById('liveDigit').textContent = 'Done';
-  document.getElementById('progress').textContent = `Processed: ${digits}/${digits} digits`;
-  console.log('Digit sequence:', digitSequence);
-  console.log('Counts:', counts);
-  console.log('Total count:', counts.reduce((a, b) => a + b, 0));
-  sessionStorage.setItem('digitCounts', JSON.stringify(counts));
-  // Generate summary report
-  const summary = counts.map((count, index) => {
-    const tally = Math.floor(count / 5) + (count % 5 > 0 ? 1 : 0);
-    return `Digit ${index}: ${tally} ${tally === 1 ? 'tally' : 'tallies'} (Count: ${count})`;
-  }).join('<br>');
-  document.getElementById('summaryReport').innerHTML = `<h2>Summary Report</h2><p>${summary}</p>`;
-  // Check guess automatically if submitted
+  
+  updateChart();
+  updateStatistics();
+  showSummary();
+  
   if (submittedGuess !== null) {
     checkGuess();
   }
-  // Re-enable guess input for next calculation
-  document.getElementById('guess').disabled = false;
-  document.getElementById('submitGuess').disabled = false;
+}
+
+function showSummary() {
+  const summaryDiv = document.getElementById('summaryReport');
+  let html = '<h3>Summary Report</h3>';
+  
+  counts.forEach((count, digit) => {
+    const tallies = Math.floor(count / 5);
+    const label = digitLabels[digit];
+    html += `<p>Digit ${label}: ${tallies} tallies (Count: ${count})</p>`;
+  });
+  
+  summaryDiv.innerHTML = html;
+}
+
+function pauseResume() {
+  if (!isCalculating) return;
+  
+  isPaused = !isPaused;
+  document.getElementById('pauseBtn').textContent = isPaused ? 'Resume' : 'Pause';
+}
+
+function reset() {
+  isCalculating = false;
+  isPaused = false;
+  currentDigitIndex = 0;
+  counts = new Array(currentBase).fill(0);
+  submittedGuess = null;
+  
+  document.getElementById('digitSequence').value = '';
+  document.getElementById('liveDigit').textContent = 'Not started';
+  document.getElementById('processedCount').textContent = '0';
+  document.getElementById('summaryReport').innerHTML = '';
+  document.getElementById('guessResult').textContent = '';
+  document.getElementById('pauseBtn').textContent = 'Pause';
+  
+  updateStatistics();
+  updateChart();
+}
+
+function submitGuess() {
+  const guessInput = document.getElementById('guess').value.trim().toUpperCase();
+  
+  if (guessInput === '') {
+    alert('Please enter a digit');
+    return;
+  }
+  
+  let guessDigit;
+  if (guessInput >= '0' && guessInput <= '9') {
+    guessDigit = parseInt(guessInput);
+  } else if (guessInput >= 'A' && guessInput <= 'Z') {
+    guessDigit = guessInput.charCodeAt(0) - 65 + 10;
+  } else {
+    alert('Invalid digit');
+    return;
+  }
+  
+  if (guessDigit >= currentBase) {
+    alert(`Digit must be less than ${currentBase} for base ${currentBase}`);
+    return;
+  }
+  
+  submittedGuess = guessDigit;
+  document.getElementById('guessResult').textContent = `You guessed: ${digitLabels[guessDigit]}`;
 }
 
 function checkGuess() {
-  const counts = JSON.parse(sessionStorage.getItem('digitCounts') || '[0,0,0,0,0,0,0,0,0,0]');
   const maxCount = Math.max(...counts);
-  const winners = counts
-    .map((count, index) => ({ digit: index, count }))
-    .filter(d => d.count === maxCount)
-    .map(d => d.digit);
-  const guess = submittedGuess;
-
-  if (winners.length > 0) {
-    const message = winners.includes(guess)
-      ? `Correct! Your guess (${guess}) was one of the digits with the most instances (${maxCount} occurrences). Winning digits: ${winners.join(', ')}.`
-      : `Wrong! Your guess (${guess}) had ${counts[guess]} occurrences. The winning digits were ${winners.join(', ')} with ${maxCount} occurrences.`;
-    document.getElementById('guessResult').textContent = message;
+  const winners = counts.map((c, i) => c === maxCount ? i : -1).filter(i => i >= 0);
+  
+  if (winners.includes(submittedGuess)) {
+    document.getElementById('guessResult').textContent += ' - Correct! 🎉';
   } else {
-    document.getElementById('guessResult').textContent = 'No digits calculated yet.';
+    const winnerLabels = winners.map(i => digitLabels[i]).join(', ');
+    document.getElementById('guessResult').textContent += ` - Wrong. Winner(s): ${winnerLabels}`;
   }
-  // Reset guess for next calculation
-  submittedGuess = null;
 }
 
 function toggleGuessSection() {
   const section = document.getElementById('guessSection');
   section.style.display = section.style.display === 'none' ? 'block' : 'none';
 }
+
+function copyDigits() {
+  const textarea = document.getElementById('digitSequence');
+  textarea.select();
+  document.execCommand('copy');
+  alert('Digits copied to clipboard!');
+}
+
+function applyBase() {
+  const baseInput = parseInt(document.getElementById('baseSystem').value);
+  
+  if (baseInput < 2 || baseInput > 12) {
+    alert('Base must be between 2 and 12');
+    return;
+  }
+  
+  if (isCalculating) {
+    alert('Cannot change base during calculation');
+    return;
+  }
+  
+  initializeBase(baseInput);
+  reset();
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', () => {
+  initializeBase(10);
+  updateAlgorithmInfo();
+  
+  document.getElementById('calcType').addEventListener('change', updateAlgorithmInfo);
+});
