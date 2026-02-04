@@ -40,15 +40,15 @@
             <!-- Statistics Grid -->
             <div class="stats-grid">
                 <div class="stat-item">
-                    <span class="stat-label">Mean:</span>
+                    <span class="stat-label">Mean: <span class="info-icon" title="Average digit value. For uniform distribution in base N, expected mean is (N-1)/2. E.g., base 10 expects ~4.5, base 2 expects ~0.5">ℹ️</span></span>
                     <span class="stat-value" id="statMean">-</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">Std Dev:</span>
+                    <span class="stat-label">Std Dev: <span class="info-icon" title="Standard Deviation measures spread of values. Lower values mean digits cluster near the mean; higher values mean more spread. For uniform distribution, expected ~√((N²-1)/12)">ℹ️</span></span>
                     <span class="stat-value" id="statStdDev">-</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">Chi-Square:</span>
+                    <span class="stat-label">Chi-Square: <span class="info-icon" title="Chi-Square test measures how well the distribution matches expected uniform distribution. Lower is better. Values < 10 are excellent, < 20 are good. High values indicate non-uniform patterns">ℹ️</span></span>
                     <span class="stat-value" id="statChiSquare">-</span>
                 </div>
             </div>
@@ -96,6 +96,7 @@
 
         <div class="button-group">
             <button onclick="calculate()">Calculate</button>
+            <button id="stepBtn" onclick="stepGeneration()">Step</button>
             <button id="pauseBtn" onclick="pauseResume()">Pause</button>
             <button onclick="reset()">Reset</button>
         </div>

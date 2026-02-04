@@ -877,6 +877,54 @@ function pauseResume() {
   document.getElementById('pauseBtn').textContent = isPaused ? 'Resume' : 'Pause';
 }
 
+async function stepGeneration() {
+  const digits = parseInt(document.getElementById('digits').value);
+  
+  // If not calculating, initialize the generator
+  if (!isCalculating) {
+    isCalculating = true;
+    isPaused = true;
+    currentDigitIndex = 0;
+    counts = new Array(currentBase).fill(0);
+    
+    document.getElementById('digitSequence').value = '';
+    document.getElementById('liveDigit').textContent = 'Stepping...';
+    document.getElementById('processedCount').textContent = '0';
+    document.getElementById('pauseBtn').textContent = 'Resume';
+    
+    const calcType = document.getElementById('calcType').value;
+    digitGenerator = getDigitGenerator(calcType);
+    
+    updateChart();
+    // Fall through to generate first digit immediately
+  }
+  
+  // Generate one digit
+  if (digitGenerator && currentDigitIndex < digits) {
+    const result = await digitGenerator.next();
+    if (result.done) {
+      finishCalculation();
+      return;
+    }
+    
+    const digit = result.value;
+    counts[digit]++;
+    currentDigitIndex++;
+    
+    const digitStr = digitLabels[digit];
+    document.getElementById('digitSequence').value += digitStr;
+    document.getElementById('liveDigit').textContent = digitStr;
+    document.getElementById('processedCount').textContent = currentDigitIndex;
+    
+    updateChart();
+    updateStatistics();
+    
+    if (currentDigitIndex >= digits) {
+      finishCalculation();
+    }
+  }
+}
+
 function reset() {
   isCalculating = false;
   isPaused = false;
