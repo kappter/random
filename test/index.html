@@ -3,140 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Randomness Entropy Comparison Lab</title>
+    <title>Live Random Calculator - Enhanced</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 </head>
 <body>
-    <h1>Randomness Entropy Comparison Lab</h1>
-
-    <div>
-        <label for="digits">Number of Digits (100–10000):</label>
-        <input type="number" id="digits" min="100" max="10000" value="1000">
+    <h1>Live Random Calculator</h1>
+    
+    <!-- Algorithm Information Panel -->
+    <div id="algorithmInfo" class="info-panel">
+        <h3 id="algoName">Algorithm: Pi Digits</h3>
+        <div class="algo-metadata">
+            <span class="badge type-badge" id="algoType">Deterministic</span>
+            <span class="badge dist-badge" id="algoDistribution">Uniform</span>
+        </div>
+        <p id="algoDescription">
+            Uses precomputed digits of Pi. Expected to be uniformly distributed.
+        </p>
+        <div id="algoStats" class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">Mean:</span>
+                <strong id="statMean">-</strong>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Std Dev:</span>
+                <strong id="statStdDev">-</strong>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Chi-Square:</span>
+                <strong id="statChiSquare">-</strong>
+            </div>
+        </div>
     </div>
 
-    <div>
-        <label for="calcType">Select Algorithms to Compare:</label><br>
-        <select id="calcType" multiple size="8">
-            <option value="pi">Pi Digits</option>
-            <option value="gaussian">Gaussian Digits</option>
-            <option value="perlin">Perlin Noise Digits</option>
-            <option value="lcg">LCG Digits</option>
-            <option value="mersenne">Mersenne Twister</option>
-            <option value="logistic">Logistic Map</option>
-            <option value="middleSquare">Middle-Square</option>
-            <option value="xorshift">Xorshift</option>
-            <option value="rule30">Rule 30</option>
-        </select>
-        <p style="font-size:0.9em;color:#555;">Hold Ctrl/Cmd to select multiple algorithms.</p>
+    <!-- Base System Selection -->
+    <div class="control-row">
+        <div class="control-group">
+            <label for="baseSystem">Number Base (2-12):</label>
+            <input type="number" id="baseSystem" min="2" max="12" value="10">
+            <button onclick="updateBase()" class="secondary-btn">Apply Base</button>
+            <span id="baseInfo" class="info-badge">Base 10 (Decimal)</span>
+        </div>
     </div>
 
-    <button onclick="calculateAllSelected()">Run Comparison</button>
-
-    <div>
-        <p id="progress">Ready.</p>
-        <p id="liveEntropy">Entropy: 0.000 bits</p>
+    <!-- Main Controls -->
+    <div class="control-row">
+        <div class="control-group">
+            <label for="digits">Number of Digits (100-10000):</label>
+            <input type="number" id="digits" min="100" max="10000" value="100">
+        </div>
+        <div class="control-group">
+            <label for="calcType">Algorithm:</label>
+            <select id="calcType" onchange="updateAlgorithmInfo()">
+                <option value="pi">Pi Digits</option>
+                <option value="gaussian">Gaussian Digits</option>
+                <option value="perlin">Perlin Noise Digits</option>
+                <option value="lcg">LCG Digits</option>
+                <option value="mersenne">Mersenne Twister</option>
+                <option value="logistic">Logistic Map</option>
+                <option value="middleSquare">Middle-Square</option>
+                <option value="xorshift">Xorshift</option>
+                <option value="quantum">Quantum Random (API)</option>
+                <option value="rule30">Cellular Automaton Rule 30</option>
+            </select>
+        </div>
     </div>
 
-    <canvas id="digitChart" width="800" height="400"></canvas>
-    <canvas id="entropyChart" width="800" height="200"></canvas>
+    <div class="control-row">
+        <div class="control-group">
+            <label for="updateFrequency">Update Frequency:</label>
+            <select id="updateFrequency">
+                <option value="10">Every 10 digits</option>
+                <option value="50" selected>Every 50 digits</option>
+                <option value="100">Every 100 digits</option>
+                <option value="500">Every 500 digits</option>
+            </select>
+        </div>
+    </div>
 
-    <div id="summaryReport"></div>
+    <!-- Action Buttons -->
+    <div class="button-row">
+        <button onclick="validateAndCalculate()" class="primary-btn">Calculate</button>
+        <button id="pauseBtn" onclick="togglePause()" class="secondary-btn" disabled>Pause</button>
+        <button onclick="resetCalculation()" class="secondary-btn">Reset</button>
+    </div>
 
-<script>
-let myChart;
-let entropyChart;
-let counts = new Array(10).fill(0);
+    <!-- Guess Section -->
+    <div id="guessSection">
+        <h2>Guess Which Digit Will Have the Most Instances</h2>
+        <input type="text" id="guess" placeholder="Enter digit (e.g., 0-9, A, B)" maxlength="1">
+        <button onclick="submitGuess()" id="submitGuess">Submit Guess</button>
+        <button onclick="toggleGuessSection()">Hide Guess Section</button>
+        <p id="guessResult"></p>
+    </div>
 
-function calculateEntropy(data) {
-    const total = data.reduce((a,b)=>a+b,0);
-    if (total === 0) return 0;
-    return -data.map(c=>c/total).filter(p=>p>0).reduce((s,p)=>s+p*Math.log2(p),0);
-}
+    <!-- Live Status -->
+    <div class="status-bar">
+        <p>Live Digit: <span id="liveDigit">Not started</span></p>
+        <p id="progress">Processed: 0 digits</p>
+    </div>
 
-function initializeCharts(reset=false) {
-    if (!myChart) {
-        const ctx = document.getElementById('digitChart').getContext('2d');
-        myChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels:['0','1','2','3','4','5','6','7','8','9'], datasets:[{ label:'Digit Counts', data:new Array(10).fill(0), backgroundColor:'#007BFF' }]},
-            options: { animation:false, responsive:false, scales:{ y:{beginAtZero:true} } }
-        });
-    }
-    const ectx = document.getElementById('entropyChart').getContext('2d');
-    if (!entropyChart || reset) {
-        entropyChart = new Chart(ectx, {
-            type:'line',
-            data:{ labels:[], datasets:[] },
-            options:{
-                animation:false,
-                responsive:false,
-                scales:{ y:{min:0,max:3.5,title:{display:true,text:'Entropy (bits)'}}, x:{display:false} }
-            }
-        });
-    }
-}
+    <!-- Chart -->
+    <div class="chart-container">
+        <canvas id="digitChart"></canvas>
+    </div>
 
-function updateDigitChart(data) {
-    myChart.data.datasets[0].data = [...data];
-    myChart.update();
-}
+    <!-- Results -->
+    <div class="results-container">
+        <div id="summaryReport"></div>
+        <div class="digit-sequence-container">
+            <label for="digitSequence">Generated Digits:</label>
+            <textarea id="digitSequence" readonly rows="5" cols="30" placeholder="Digits will appear here as they are generated..."></textarea>
+            <br>
+            <button onclick="copyDigits()">Copy Digits</button>
+        </div>
+    </div>
 
-async function calculateAllSelected() {
-    const digits = parseInt(document.getElementById('digits').value);
-    const select = document.getElementById('calcType');
-    const selected = Array.from(select.selectedOptions).map(o=>o.value);
-    if (selected.length===0) { alert('Select at least one algorithm.'); return; }
-
-    initializeCharts(true);
-    document.getElementById('summaryReport').innerHTML = '';
-
-    for (const type of selected) {
-        document.getElementById('progress').textContent = `Running ${type}...`;
-        await runAlgorithm(type, digits);
-    }
-    document.getElementById('progress').textContent = 'Comparison complete!';
-}
-
-async function runAlgorithm(type, digits) {
-    return new Promise(resolve => {
-        counts = new Array(10).fill(0);
-        const color = `hsl(${Math.random()*360},80%,40%)`;
-        const entropyData = [];
-        const labels = [];
-        let index=0;
-
-        function loop() {
-            if (index >= digits) {
-                entropyChart.data.datasets.push({ label:type, data:entropyData, borderColor:color, borderWidth:2, fill:false, pointRadius:0 });
-                entropyChart.update();
-                const finalEntropy = calculateEntropy(counts).toFixed(3);
-                document.getElementById('summaryReport').innerHTML += `<p><strong>${type} Final Entropy:</strong> ${finalEntropy} bits</p>`;
-                resolve();
-                return;
-            }
-
-            const digit = Math.floor(Math.random()*10); // placeholder random generator
-            counts[digit]++;
-
-            if (index % 50 === 0) {
-                const entropy = calculateEntropy(counts);
-                entropyData.push(entropy);
-                labels.push(index);
-                const entropyElem = document.getElementById('liveEntropy');
-                entropyElem.textContent = `Entropy: ${entropy.toFixed(3)} bits (${type})`;
-                const hue = (entropy/3.32)*120;
-                entropyElem.style.color = `hsl(${hue},80%,35%)`;
-                updateDigitChart(counts);
-                entropyChart.update();
-            }
-
-            index++;
-            requestAnimationFrame(loop);
-        }
-        requestAnimationFrame(loop);
-    });
-}
-</script>
+    <script src="script.js"></script>
 </body>
 </html>
