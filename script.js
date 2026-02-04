@@ -24,11 +24,11 @@ const AlgorithmMetadata = {
     name: 'Pi Digits',
     type: 'Deterministic',
     distribution: 'Uniform (Expected)',
-    description: 'Uses the digits of Pi. While deterministic, Pi digits are expected to be uniformly distributed across all bases.',
-    basicInfo: 'Pi (π) is a mathematical constant representing the ratio of a circle\'s circumference to its diameter. Its decimal representation is infinite and non-repeating, with digits that appear statistically random despite being completely deterministic.',
-    technicalInfo: 'Uses precomputed digits of Pi in base 10. The digits pass many statistical randomness tests (chi-square, runs test, serial correlation) but are not cryptographically secure. Period: infinite (non-repeating).',
-    useCases: 'Educational demonstrations, testing statistical analysis software, benchmarking digit extraction algorithms, mathematical research on normal numbers.',
-    compatibleBases: [10],
+    description: 'Uses the digits of Pi converted to any base. While deterministic, Pi digits are expected to be uniformly distributed.',
+    basicInfo: 'Pi (π) is a mathematical constant representing the ratio of a circle\'s circumference to its diameter. Its representation is infinite and non-repeating in any base, with digits that appear statistically random despite being completely deterministic.',
+    technicalInfo: 'Uses precomputed decimal digits of Pi, converted on-the-fly to the target base. The digits pass many statistical randomness tests (chi-square, runs test, serial correlation) but are not cryptographically secure. Period: infinite (non-repeating).',
+    useCases: 'Educational demonstrations, testing statistical analysis software, benchmarking digit extraction algorithms, mathematical research on normal numbers across different bases.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     category: 'classic'
   },
   middleSquare: {
@@ -415,7 +415,8 @@ function updateStatistics() {
 
 // PCG (Permuted Congruential Generator)
 function* pcgGenerator(base) {
-  let state = Date.now() % 0xFFFFFFFF;
+  let state = (Date.now() % 0xFFFFFFFF) >>> 0;
+  if (state === 0) state = 12345;
   const multiplier = 747796405;
   const increment = 2891336453;
   
@@ -423,13 +424,15 @@ function* pcgGenerator(base) {
     // LCG step
     state = (multiplier * state + increment) >>> 0;
     
-    // Permutation: XOR-shift and rotate
-    const xorshifted = (((state >>> 18) ^ state) >>> 27) >>> 0;
-    const rot = state >>> 59;
-    const output = ((xorshifted >>> rot) | (xorshifted << ((-rot) & 31))) >>> 0;
+    // PCG permutation: XOR-shift-rotate
+    // Use full 32-bit state for better mixing
+    let word = state;
+    word = ((word >>> 18) ^ word) >>> 0;
+    word = (word * 277803737) >>> 0;  // Multiply by constant
+    word = ((word >>> 22) ^ word) >>> 0;
     
-    // Map to base
-    const digit = output % base;
+    // Map to base using the full range
+    const digit = Math.floor((word / 4294967296) * base);
     yield digit;
   }
 }
@@ -501,20 +504,43 @@ function* sobolGenerator(base) {
   }
 }
 
-// Pi Digits (existing - base 10 only)
+// Pi Digits - works in all bases by converting decimal Pi to target base
 function* piGenerator(base) {
+  // Pi with 100 decimal digits
   const piDigits = "31415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679";
-  let index = 0;
   
-  while (index < piDigits.length) {
-    yield parseInt(piDigits[index]);
-    index++;
-  }
-  
-  // If we run out, loop
-  while (true) {
-    yield parseInt(piDigits[index % piDigits.length]);
-    index++;
+  if (base === 10) {
+    // Fast path for base 10
+    let index = 0;
+    while (true) {
+      yield parseInt(piDigits[index % piDigits.length]);
+      index++;
+    }
+  } else {
+    // Convert Pi digits to target base
+    // We'll process Pi as a large number and extract digits in the target base
+    let digitBuffer = [];
+    let bufferIndex = 0;
+    
+    // Process chunks of decimal digits and convert to target base
+    for (let chunkStart = 0; chunkStart < piDigits.length; chunkStart += 15) {
+      const chunk = piDigits.substring(chunkStart, Math.min(chunkStart + 15, piDigits.length));
+      let value = parseInt(chunk);
+      
+      // Convert this chunk to target base
+      const chunkDigits = [];
+      while (value > 0) {
+        chunkDigits.unshift(value % base);
+        value = Math.floor(value / base);
+      }
+      digitBuffer.push(...chunkDigits);
+    }
+    
+    // Yield digits from buffer, looping when exhausted
+    while (true) {
+      yield digitBuffer[bufferIndex % digitBuffer.length];
+      bufferIndex++;
+    }
   }
 }
 
@@ -630,20 +656,28 @@ function* logisticGenerator(base) {
 
 // Middle-Square Method
 function* middleSquareGenerator(base) {
-  let seed = Date.now() % 10000;
+  let seed = Date.now() % 1000000;
+  if (seed === 0) seed = 123456;
   const seenValues = new Set();
   
   while (true) {
-    if (seenValues.has(seed)) {
-      seed = (seed + Date.now()) % 10000;
+    // Detect cycles and reseed
+    if (seenValues.has(seed) || seed === 0) {
+      seed = (Date.now() + Math.floor(Math.random() * 1000000)) % 1000000;
+      if (seed === 0) seed = 123456;
       seenValues.clear();
     }
     seenValues.add(seed);
     
-    const squared = (seed * seed).toString().padStart(8, '0');
-    const middle = squared.substring(2, 6);
-    seed = parseInt(middle);
+    // Square the seed
+    const squared = seed * seed;
     
+    // Extract middle bits using bitwise operations for better distribution
+    // Shift right to get middle portion, then mask to get desired bits
+    const shifted = squared >>> 8;  // Remove lower 8 bits
+    seed = (shifted & 0xFFFFF) % 1000000;  // Keep 20 bits, mod to keep in range
+    
+    // Use multiple bits for better distribution in low bases
     const digit = seed % base;
     yield digit;
   }
@@ -687,11 +721,14 @@ async function* quantumGenerator(base) {
 // Rule 30 Cellular Automaton
 function* rule30Generator(base) {
   let cells = new Array(63).fill(0);
-  cells[31] = 1;
+  cells[31] = 1;  // Start with single cell in center
+  let bitBuffer = 0;
+  let bitCount = 0;
   
   while (true) {
     const newCells = new Array(63).fill(0);
     
+    // Apply Rule 30 to each cell
     for (let i = 1; i < 62; i++) {
       const left = cells[i-1];
       const center = cells[i];
@@ -701,9 +738,19 @@ function* rule30Generator(base) {
     }
     
     cells = newCells;
-    const sum = cells.reduce((a, b) => a + b, 0);
-    const digit = sum % base;
-    yield digit;
+    
+    // Extract center cell bit and accumulate bits for the base
+    bitBuffer = (bitBuffer << 1) | cells[31];
+    bitCount++;
+    
+    // When we have enough bits for the base, yield a digit
+    const bitsNeeded = Math.ceil(Math.log2(base));
+    if (bitCount >= bitsNeeded) {
+      const digit = bitBuffer % base;
+      yield digit;
+      bitBuffer = 0;
+      bitCount = 0;
+    }
   }
 }
 
