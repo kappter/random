@@ -722,27 +722,29 @@ async function* quantumGenerator(base) {
 
 // Rule 30 Cellular Automaton
 function* rule30Generator(base) {
-  let cells = new Array(63).fill(0);
-  cells[31] = 1;  // Start with single cell in center
+  const size = 63;
+  let cells = new Array(size).fill(0);
+  cells[Math.floor(size/2)] = 1;  // Start with single cell in center
   let bitBuffer = 0;
   let bitCount = 0;
   
   while (true) {
-    const newCells = new Array(63).fill(0);
+    const newCells = new Array(size).fill(0);
     
-    // Apply Rule 30 to each cell
-    for (let i = 1; i < 62; i++) {
-      const left = cells[i-1];
+    // Apply Rule 30 to each cell with wrap-around (toroidal) boundaries
+    for (let i = 0; i < size; i++) {
+      const left = cells[(i - 1 + size) % size];  // Wrap left
       const center = cells[i];
-      const right = cells[i+1];
+      const right = cells[(i + 1) % size];  // Wrap right
       const pattern = (left << 2) | (center << 1) | right;
       newCells[i] = (30 >> pattern) & 1;
     }
     
     cells = newCells;
     
-    // Extract center cell bit and accumulate bits for the base
-    bitBuffer = (bitBuffer << 1) | cells[31];
+    // Extract center cell bit
+    const bit = cells[Math.floor(size/2)];
+    bitBuffer = (bitBuffer << 1) | bit;
     bitCount++;
     
     // When we have enough bits for the base, yield a digit
