@@ -9,12 +9,14 @@ let isCalculating = false;
 let isPaused = false;
 let digitGenerator = null;
 let currentDigitIndex = 0;
+let generationSpeed = 100; // milliseconds per digit
 
 // Base system names
 const BaseNames = {
   2: 'Binary', 3: 'Ternary', 4: 'Quaternary', 5: 'Quinary',
   6: 'Senary', 7: 'Septenary', 8: 'Octal', 9: 'Nonary',
-  10: 'Decimal', 11: 'Undecimal', 12: 'Duodecimal'
+  10: 'Decimal', 11: 'Undecimal', 12: 'Duodecimal',
+  13: 'Tridecimal', 14: 'Tetradecimal', 15: 'Pentadecimal', 16: 'Hexadecimal'
 };
 
 // Algorithm metadata with categories
@@ -28,7 +30,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Pi (π) is a mathematical constant representing the ratio of a circle\'s circumference to its diameter. Its representation is infinite and non-repeating in any base, with digits that appear statistically random despite being completely deterministic.',
     technicalInfo: 'Uses precomputed decimal digits of Pi, converted on-the-fly to the target base. The digits pass many statistical randomness tests (chi-square, runs test, serial correlation) but are not cryptographically secure. Period: infinite (non-repeating).',
     useCases: 'Educational demonstrations, testing statistical analysis software, benchmarking digit extraction algorithms, mathematical research on normal numbers across different bases.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'classic'
   },
   middleSquare: {
@@ -39,7 +41,7 @@ const AlgorithmMetadata = {
     basicInfo: 'One of the first PRNGs, invented by John von Neumann. Squares a number and extracts the middle digits as the next random number. Simple to understand but has serious flaws including short cycles.',
     technicalInfo: 'Algorithm: seed² → extract middle digits → new seed. Cycle detection implemented to reseed when stuck. Not suitable for serious applications due to poor statistical properties and short periods.',
     useCases: 'Computer science education, demonstrating PRNG concepts, historical interest. Not recommended for production use.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'classic'
   },
   lcg: {
@@ -50,7 +52,7 @@ const AlgorithmMetadata = {
     basicInfo: 'One of the oldest and most well-known PRNG algorithms. Uses a simple linear equation to generate the next number from the previous one. Fast and memory-efficient but has correlation issues.',
     technicalInfo: 'Formula: X(n+1) = (a × X(n) + c) mod m. Parameters: a=1103515245, c=12345, m=2³¹. Fails spectral test in higher dimensions. Not cryptographically secure.',
     useCases: 'Quick simulations, games, non-critical random number generation, embedded systems with limited resources. Replaced by better PRNGs in modern applications.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'classic'
   },
   randu: {
@@ -61,7 +63,7 @@ const AlgorithmMetadata = {
     basicInfo: 'RANDU is a cautionary tale in computer science. Used by IBM in the 1960s-70s, it was later discovered to have severe flaws. When plotted in 3D, consecutive triplets fall on just 15 planes instead of filling space randomly.',
     technicalInfo: 'Formula: X(n+1) = 65539 × X(n) mod 2³¹. The multiplier 65539 = 2¹⁶ + 3 causes severe correlation. Fails spectral test catastrophically. Never use in production!',
     useCases: 'Computer science education (as a negative example), demonstrating the importance of proper PRNG testing, historical research on computational errors.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'classic',
     warning: true
   },
@@ -75,7 +77,7 @@ const AlgorithmMetadata = {
     basicInfo: 'PCG (Permuted Congruential Generator) was developed by Melissa O\'Neill in 2014 to address weaknesses in traditional LCGs. It applies permutation functions to LCG output, dramatically improving statistical quality while maintaining speed.',
     technicalInfo: 'Combines LCG with XOR-shift and rotation permutations. Passes TestU01 BigCrush suite. Small state size (64-128 bits). Much faster than Mersenne Twister with better statistical properties.',
     useCases: 'Modern game development, scientific simulations, general-purpose random number generation, replacing older PRNGs in new codebases.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'modern'
   },
   xoshiro: {
@@ -86,7 +88,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Xoshiro256++ (XOR/Shift/Rotate) is currently considered the gold standard for general-purpose PRNGs. Created by David Blackman and Sebastiano Vigna in 2018, it\'s the successor to the Xorshift family.',
     technicalInfo: 'Uses 256-bit state with XOR, shift, and rotate operations. Period: 2²⁵⁶-1. Passes all known statistical tests including PractRand and TestU01. Extremely fast on modern CPUs.',
     useCases: 'Default PRNG for new projects, high-performance simulations, game engines, scientific computing, any application requiring fast, high-quality random numbers.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'modern'
   },
   mersenne: {
@@ -97,7 +99,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Developed in 1997 by Makoto Matsumoto and Takuji Nishimura, Mersenne Twister became the most widely used PRNG for two decades. Named after Mersenne prime numbers, it has an extraordinarily long period.',
     technicalInfo: 'Period: 2¹⁹⁹³⁷-1 (a Mersenne prime). State size: 2.5KB. Passes most statistical tests but fails some linearity tests. Not cryptographically secure. Slower than modern alternatives like Xoshiro.',
     useCases: 'Scientific computing, Monte Carlo simulations, statistical software (R, Python NumPy default until recently), legacy code requiring compatibility.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'modern'
   },
   xorshift: {
@@ -108,7 +110,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Invented by George Marsaglia in 2003, Xorshift uses only XOR and bit-shift operations, making it extremely simple and fast. It\'s the predecessor to the Xoshiro family.',
     technicalInfo: 'Uses XOR with left and right shifts. Minimal state (32-128 bits). Very fast but has some statistical weaknesses. Fails linearity tests. Superseded by Xoshiro but still useful for simple applications.',
     useCases: 'Embedded systems, games requiring fast random numbers, situations where simplicity is valued, educational purposes to understand XOR-based PRNGs.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'modern'
   },
   
@@ -121,7 +123,7 @@ const AlgorithmMetadata = {
     basicInfo: 'The Gaussian (normal) distribution is the famous "bell curve" that appears throughout nature and statistics. This implementation uses the Box-Muller transform to convert uniform random numbers into normally distributed ones.',
     technicalInfo: 'Box-Muller transform: converts two uniform random variables into two independent Gaussian variables using trigonometric functions. Mean and standard deviation adapted for each base to keep values in range.',
     useCases: 'Statistical simulations, modeling natural phenomena (heights, test scores, measurement errors), machine learning (weight initialization), financial modeling.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'mathematical'
   },
   logistic: {
@@ -132,7 +134,7 @@ const AlgorithmMetadata = {
     basicInfo: 'The logistic map is a simple mathematical equation that exhibits chaotic behavior. Despite being completely deterministic (x(n+1) = r × x(n) × (1 - x(n))), tiny changes in initial conditions lead to completely different sequences.',
     technicalInfo: 'Parameter r = 3.99 places the system in chaotic regime. Demonstrates sensitive dependence on initial conditions ("butterfly effect"). Not suitable for cryptography due to predictability from state.',
     useCases: 'Chaos theory education, demonstrating deterministic chaos, population dynamics modeling, exploring nonlinear dynamics, artistic applications.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'mathematical'
   },
   perlin: {
@@ -143,7 +145,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Invented by Ken Perlin in 1983 for the movie Tron, Perlin noise creates smooth, natural-looking randomness. Unlike white noise, it has coherent structure with smooth gradients between values.',
     technicalInfo: 'Uses gradient noise with interpolation (fade function: 6t⁵ - 15t⁴ + 10t³). Creates continuous, differentiable noise. Often used in multiple octaves for fractal-like detail.',
     useCases: 'Procedural terrain generation, texture synthesis, cloud rendering, organic-looking animations, game development (Minecraft terrain), visual effects.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'mathematical'
   },
   
@@ -156,7 +158,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Sobol sequences are quasi-random (low-discrepancy) sequences that fill space more uniformly than random numbers. Developed by Ilya Sobol in 1967, they avoid clustering and gaps that occur with true randomness.',
     technicalInfo: 'Based on binary van der Corput sequence with direction numbers. Achieves O((log N)^d / N) discrepancy. Deterministic but appears random. Better convergence than pseudo-random for integration.',
     useCases: 'Monte Carlo integration, quasi-Monte Carlo methods, financial modeling (option pricing), computer graphics (ray tracing), numerical optimization, sensitivity analysis.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'quasi'
   },
   
@@ -169,7 +171,7 @@ const AlgorithmMetadata = {
     basicInfo: 'True random numbers generated from quantum phenomena (vacuum fluctuations) measured by the Australian National University. Unlike pseudo-random algorithms, quantum randomness is fundamentally unpredictable.',
     technicalInfo: 'Uses ANU QRNG API which measures quantum vacuum state. Truly random (not deterministic). Requires internet connection. Slower than PRNGs due to API latency. Suitable for cryptography.',
     useCases: 'Cryptographic key generation, lottery systems, scientific experiments requiring true randomness, security applications, gambling, unbiased sampling.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'crypto'
   },
   rule30: {
@@ -180,7 +182,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Rule 30 is a one-dimensional cellular automaton discovered by Stephen Wolfram. Despite having extremely simple rules, it produces complex, seemingly random patterns. Wolfram proposed using it as a random number generator.',
     technicalInfo: 'Binary rule: 00011110 (30 in decimal). Updates each cell based on itself and two neighbors. Center column used for random bits. Passes many statistical tests but has some subtle patterns.',
     useCases: 'Random number generation in Mathematica, studying emergence of complexity from simple rules, demonstrating computational irreducibility, art and pattern generation.',
-    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'crypto'
   }
 };
@@ -218,7 +220,7 @@ function initializeBase(base) {
   if (base <= 10) {
     guessInput.placeholder = `Enter digit (0-${base-1})`;
   } else {
-    const lastDigit = String.fromCharCode(55 + base); // A=10, B=11
+    const lastDigit = String.fromCharCode(65 + base - 11); // A=10, B=11, ..., F=15
     guessInput.placeholder = `Enter digit (0-9, A-${lastDigit})`;
   }
 }
@@ -229,7 +231,7 @@ function generateLabels(base) {
     if (i < 10) {
       labels.push(i.toString());
     } else {
-      // Use A, B for bases 11-12
+      // Use A, B, C, D, E, F for bases 11-16
       labels.push(String.fromCharCode(65 + i - 10));
     }
   }
@@ -819,7 +821,7 @@ async function calculate() {
       if (currentDigitIndex % updateFreq === 0 || currentDigitIndex === digits) {
         updateChart();
         updateStatistics();
-        await new Promise(resolve => requestAnimationFrame(resolve));
+        await new Promise(resolve => setTimeout(resolve, generationSpeed));
       }
     }
     
@@ -997,8 +999,8 @@ function copyDigits() {
 function applyBase() {
   const baseInput = parseInt(document.getElementById('baseSystem').value);
   
-  if (baseInput < 2 || baseInput > 12) {
-    alert('Base must be between 2 and 12');
+  if (baseInput < 2 || baseInput > 16) {
+    alert('Base must be between 2 and 16');
     return;
   }
   
@@ -1017,4 +1019,13 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAlgorithmInfo();
   
   document.getElementById('calcType').addEventListener('change', updateAlgorithmInfo);
+  
+  // Speed control slider
+  const speedControl = document.getElementById('speedControl');
+  const speedValue = document.getElementById('speedValue');
+  
+  speedControl.addEventListener('input', (e) => {
+    generationSpeed = parseInt(e.target.value);
+    speedValue.textContent = `${generationSpeed}ms`;
+  });
 });
