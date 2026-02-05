@@ -750,8 +750,14 @@ function* rule30Generator(base) {
     // When we have enough bits for the base, yield a digit
     const bitsNeeded = Math.ceil(Math.log2(base));
     if (bitCount >= bitsNeeded) {
-      const digit = bitBuffer % base;
-      yield digit;
+      const maxValue = (1 << bitsNeeded) - 1;
+      const digit = bitBuffer & maxValue;
+      
+      // Rejection sampling: only yield if digit < base
+      if (digit < base) {
+        yield digit;
+      }
+      
       bitBuffer = 0;
       bitCount = 0;
     }
