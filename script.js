@@ -814,6 +814,7 @@ async function calculate() {
       const digit = result.value;
       counts[digit]++;
       currentDigitIndex++;
+
       
       const digitStr = digitLabels[digit];
       document.getElementById('digitSequence').value += digitStr;
