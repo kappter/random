@@ -724,7 +724,15 @@ async function* quantumGenerator(base) {
 function* rule30Generator(base) {
   const size = 63;
   let cells = new Array(size).fill(0);
-  cells[Math.floor(size/2)] = 1;  // Start with single cell in center
+  
+  // Random initialization: seed with random pattern
+  // This ensures different results on each run while maintaining Rule 30's chaotic properties
+  const seed = Date.now() + Math.random() * 1000000;
+  for (let i = 0; i < size; i++) {
+    // Use a simple LCG to generate initial random bits
+    const hash = Math.sin(seed + i) * 10000;
+    cells[i] = (hash - Math.floor(hash)) > 0.5 ? 1 : 0;
+  }
   let bitBuffer = 0;
   let bitCount = 0;
   
