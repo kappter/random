@@ -30,6 +30,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Pi (π) is a mathematical constant representing the ratio of a circle\'s circumference to its diameter. Its representation is infinite and non-repeating in any base, with digits that appear statistically random despite being completely deterministic.',
     technicalInfo: 'Uses precomputed decimal digits of Pi, converted on-the-fly to the target base. The digits pass many statistical randomness tests (chi-square, runs test, serial correlation) but are not cryptographically secure. Period: infinite (non-repeating).',
     useCases: 'Educational demonstrations, testing statistical analysis software, benchmarking digit extraction algorithms, mathematical research on normal numbers across different bases.',
+    languageUsage: 'Not used as a default PRNG in any major programming language (impractical). Used in educational contexts and demonstrations.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'classic'
   },
@@ -41,6 +42,7 @@ const AlgorithmMetadata = {
     basicInfo: 'One of the first PRNGs, invented by John von Neumann. Squares a number and extracts the middle digits as the next random number. Simple to understand but has serious flaws including short cycles.',
     technicalInfo: 'Algorithm: seed² → extract middle digits → new seed. Cycle detection implemented to reseed when stuck. Not suitable for serious applications due to poor statistical properties and short periods.',
     useCases: 'Computer science education, demonstrating PRNG concepts, historical interest. Not recommended for production use.',
+    languageUsage: 'Historical: ENIAC (1946), early computers (1950s). Not used in modern programming languages. Educational purposes only.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'classic'
   },
@@ -52,6 +54,7 @@ const AlgorithmMetadata = {
     basicInfo: 'One of the oldest and most well-known PRNG algorithms. Uses a simple linear equation to generate the next number from the previous one. Fast and memory-efficient but has correlation issues.',
     technicalInfo: 'Formula: X(n+1) = (a × X(n) + c) mod m. Parameters: a=1103515245, c=12345, m=2³¹. Fails spectral test in higher dimensions. Not cryptographically secure.',
     useCases: 'Quick simulations, games, non-critical random number generation, embedded systems with limited resources. Replaced by better PRNGs in modern applications.',
+    languageUsage: 'Java (java.util.Random until Java 8), C (rand()), C++ (rand() before C++11), Visual Basic 6. Still common in older codebases.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'classic'
   },
@@ -63,6 +66,7 @@ const AlgorithmMetadata = {
     basicInfo: 'RANDU is a cautionary tale in computer science. Used by IBM in the 1960s-70s, it was later discovered to have severe flaws. When plotted in 3D, consecutive triplets fall on just 15 planes instead of filling space randomly.',
     technicalInfo: 'Formula: X(n+1) = 65539 × X(n) mod 2³¹. The multiplier 65539 = 2¹⁶ + 3 causes severe correlation. Fails spectral test catastrophically. Never use in production!',
     useCases: 'Computer science education (as a negative example), demonstrating the importance of proper PRNG testing, historical research on computational errors.',
+    languageUsage: 'IBM System/360 (1960s-1970s). Widely used in the 1960s-70s. No modern use - considered one of the worst PRNGs ever designed.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'classic',
     warning: true
@@ -77,6 +81,7 @@ const AlgorithmMetadata = {
     basicInfo: 'PCG (Permuted Congruential Generator) was developed by Melissa O\'Neill in 2014 to address weaknesses in traditional LCGs. It applies permutation functions to LCG output, dramatically improving statistical quality while maintaining speed.',
     technicalInfo: 'Combines LCG with XOR-shift and rotation permutations. Passes TestU01 BigCrush suite. Small state size (64-128 bits). Much faster than Mersenne Twister with better statistical properties.',
     useCases: 'Modern game development, scientific simulations, general-purpose random number generation, replacing older PRNGs in new codebases.',
+    languageUsage: 'NumPy (Python, default since 1.17 as PCG64), Rust (rand crate), available in Julia and C++ libraries. Increasingly popular replacement for MT19937.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'modern'
   },
@@ -88,6 +93,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Xoshiro256++ (XOR/Shift/Rotate) is currently considered the gold standard for general-purpose PRNGs. Created by David Blackman and Sebastiano Vigna in 2018, it\'s the successor to the Xorshift family.',
     technicalInfo: 'Uses 256-bit state with XOR, shift, and rotate operations. Period: 2²⁵⁶-1. Passes all known statistical tests including PractRand and TestU01. Extremely fast on modern CPUs.',
     useCases: 'Default PRNG for new projects, high-performance simulations, game engines, scientific computing, any application requiring fast, high-quality random numbers.',
+    languageUsage: 'Julia (default since 1.7), available in Rust (rand crate), C++ libraries, Python (randomgen). Recommended for new projects.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'modern'
   },
@@ -99,6 +105,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Developed in 1997 by Makoto Matsumoto and Takuji Nishimura, Mersenne Twister became the most widely used PRNG for two decades. Named after Mersenne prime numbers, it has an extraordinarily long period.',
     technicalInfo: 'Period: 2¹⁹⁹³⁷-1 (a Mersenne prime). State size: 2.5KB. Passes most statistical tests but fails some linearity tests. Not cryptographically secure. Slower than modern alternatives like Xoshiro.',
     useCases: 'Scientific computing, Monte Carlo simulations, statistical software (R, Python NumPy default until recently), legacy code requiring compatibility.',
+    languageUsage: 'Python (default until NumPy 1.17), Ruby, PHP, R, MATLAB, Excel, C++ (std::mt19937 since C++11), Julia (until 1.7), Mathematica. Most widely used PRNG for 20+ years.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'modern'
   },
@@ -110,6 +117,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Invented by George Marsaglia in 2003, Xorshift uses only XOR and bit-shift operations, making it extremely simple and fast. It\'s the predecessor to the Xoshiro family.',
     technicalInfo: 'Uses XOR with left and right shifts. Minimal state (32-128 bits). Very fast but has some statistical weaknesses. Fails linearity tests. Superseded by Xoshiro but still useful for simple applications.',
     useCases: 'Embedded systems, games requiring fast random numbers, situations where simplicity is valued, educational purposes to understand XOR-based PRNGs.',
+    languageUsage: 'JavaScript (V8 engine used Xorshift128+ in older versions), D language (std.random.Xorshift), available in Julia and Node.js libraries.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'modern'
   },
@@ -123,6 +131,7 @@ const AlgorithmMetadata = {
     basicInfo: 'The Gaussian (normal) distribution is the famous "bell curve" that appears throughout nature and statistics. This implementation uses the Box-Muller transform to convert uniform random numbers into normally distributed ones.',
     technicalInfo: 'Box-Muller transform: converts two uniform random variables into two independent Gaussian variables using trigonometric functions. Mean and standard deviation adapted for each base to keep values in range.',
     useCases: 'Statistical simulations, modeling natural phenomena (heights, test scores, measurement errors), machine learning (weight initialization), financial modeling.',
+    languageUsage: 'Available in all major languages: Python (random.gauss(), numpy.random.normal()), Java (Random.nextGaussian()), C++ (std::normal_distribution). Box-Muller transform is standard.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'mathematical'
   },
@@ -134,6 +143,7 @@ const AlgorithmMetadata = {
     basicInfo: 'The logistic map is a simple mathematical equation that exhibits chaotic behavior. Despite being completely deterministic (x(n+1) = r × x(n) × (1 - x(n))), tiny changes in initial conditions lead to completely different sequences.',
     technicalInfo: 'Parameter r = 3.99 places the system in chaotic regime. Demonstrates sensitive dependence on initial conditions ("butterfly effect"). Not suitable for cryptography due to predictability from state.',
     useCases: 'Chaos theory education, demonstrating deterministic chaos, population dynamics modeling, exploring nonlinear dynamics, artistic applications.',
+    languageUsage: 'Not used as a default PRNG in any language. Available in research/educational contexts. Used in chaos theory courses and demonstrations.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'mathematical'
   },
@@ -145,6 +155,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Invented by Ken Perlin in 1983 for the movie Tron, Perlin noise creates smooth, natural-looking randomness. Unlike white noise, it has coherent structure with smooth gradients between values.',
     technicalInfo: 'Uses gradient noise with interpolation (fade function: 6t⁵ - 15t⁴ + 10t³). Creates continuous, differentiable noise. Often used in multiple octaves for fractal-like detail.',
     useCases: 'Procedural terrain generation, texture synthesis, cloud rendering, organic-looking animations, game development (Minecraft terrain), visual effects.',
+    languageUsage: 'Unity (Mathf.PerlinNoise()), Unreal Engine (plugins), Godot (built-in), Processing, Three.js. Standard in game engines but not general-purpose PRNGs.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'mathematical'
   },
@@ -158,6 +169,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Sobol sequences are quasi-random (low-discrepancy) sequences that fill space more uniformly than random numbers. Developed by Ilya Sobol in 1967, they avoid clustering and gaps that occur with true randomness.',
     technicalInfo: 'Based on binary van der Corput sequence with direction numbers. Achieves O((log N)^d / N) discrepancy. Deterministic but appears random. Better convergence than pseudo-random for integration.',
     useCases: 'Monte Carlo integration, quasi-Monte Carlo methods, financial modeling (option pricing), computer graphics (ray tracing), numerical optimization, sensitivity analysis.',
+    languageUsage: 'MATLAB (sobolset), SciPy (Python: scipy.stats.qmc.Sobol), specialized numerical libraries. Not a general PRNG - used for specific integration tasks.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'quasi'
   },
@@ -171,6 +183,7 @@ const AlgorithmMetadata = {
     basicInfo: 'True random numbers generated from quantum phenomena (vacuum fluctuations) measured by the Australian National University. Unlike pseudo-random algorithms, quantum randomness is fundamentally unpredictable.',
     technicalInfo: 'Uses ANU QRNG API which measures quantum vacuum state. Truly random (not deterministic). Requires internet connection. Slower than PRNGs due to API latency. Suitable for cryptography.',
     useCases: 'Cryptographic key generation, lottery systems, scientific experiments requiring true randomness, security applications, gambling, unbiased sampling.',
+    languageUsage: 'Not built into programming languages. Available through APIs (ANU QRNG API) and specialized hardware. Linux /dev/random uses hardware sources when available.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'crypto'
   },
@@ -182,6 +195,7 @@ const AlgorithmMetadata = {
     basicInfo: 'Rule 30 is a one-dimensional cellular automaton discovered by Stephen Wolfram. Despite having extremely simple rules, it produces complex, seemingly random patterns. Wolfram proposed using it as a random number generator.',
     technicalInfo: 'Binary rule: 00011110 (30 in decimal). Updates each cell based on itself and two neighbors. Center column used for random bits. Passes many statistical tests but has some subtle patterns.',
     useCases: 'Random number generation in Mathematica, studying emergence of complexity from simple rules, demonstrating computational irreducibility, art and pattern generation.',
+    languageUsage: 'Mathematica (used by Stephen Wolfram in early versions), research contexts. Not widely adopted in mainstream programming languages.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'crypto'
   }
@@ -318,6 +332,7 @@ function updateAlgorithmInfo() {
   document.getElementById('algorithmBasicInfo').textContent = meta.basicInfo || 'No additional information available.';
   document.getElementById('algorithmTechnicalInfo').textContent = meta.technicalInfo || 'No technical details available.';
   document.getElementById('algorithmUseCases').textContent = meta.useCases || 'General purpose random number generation.';
+  document.getElementById('algorithmLanguageUsage').textContent = meta.languageUsage || 'Not commonly used in mainstream programming languages.';
   
   // Add warning styling if needed
   const infoPanel = document.querySelector('.algorithm-info');
