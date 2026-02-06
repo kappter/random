@@ -377,8 +377,7 @@ function createChart() {
           anchor: 'center',
           align: 'center',
           formatter: (value) => {
-            const tallies = Math.floor(value / 5);
-            return tallies > 0 ? tallies : '';
+            return value > 0 ? value : '';
           },
           color: '#fff',
           font: { size: 14, weight: 'bold' }
