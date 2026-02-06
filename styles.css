@@ -479,3 +479,20 @@ select option:disabled {
     font-weight: bold;
     color: #667eea;
 }
+
+/* Chart Legend */
+.chart-legend {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 0.95em;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.chart-legend strong {
+    font-size: 1.1em;
+    margin-right: 8px;
+}
