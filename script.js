@@ -1,5 +1,6 @@
 // Global variables
 let myChart = null;
+let timeSeriesChart = null;
 let currentBase = 10;
 let counts = [];
 let digitLabels = [];
@@ -10,6 +11,7 @@ let isPaused = false;
 let digitGenerator = null;
 let currentDigitIndex = 0;
 let generationSpeed = 100; // milliseconds per digit
+let timeSeriesData = []; // Array of snapshots: [{step: 0, counts: [0,0,0...]}, ...]
 
 // Base system names
 const BaseNames = {
@@ -210,6 +212,12 @@ const CategoryNames = {
   crypto: 'Cryptographic/True Random'
 };
 
+// Helper function to get current algorithm name
+function getAlgorithmName() {
+  const calcType = document.getElementById('calcType').value;
+  return AlgorithmMetadata[calcType]?.name || 'Unknown';
+}
+
 // Base configuration
 function initializeBase(base) {
   currentBase = base;
@@ -226,8 +234,12 @@ function initializeBase(base) {
   // Update algorithm dropdown compatibility
   updateAlgorithmCompatibility();
   
-  // Recreate chart
+  // Recreate charts
   createChart();
+  createTimeSeriesChart();
+  
+  // Reset time series data
+  timeSeriesData = [];
   
   // Update guess placeholder
   const guessInput = document.getElementById('guess');
@@ -370,7 +382,7 @@ function createChart() {
         legend: { display: false },
         title: {
           display: true,
-          text: `Digit Frequency Distribution (Base ${currentBase})`,
+          text: `Digit Frequency - ${getAlgorithmName()} (Base ${currentBase})`,
           font: { size: 16, weight: 'bold' }
         },
         datalabels: {
@@ -395,6 +407,94 @@ function createChart() {
     },
     plugins: [ChartDataLabels]
   });
+}
+
+// Create time series chart
+function createTimeSeriesChart() {
+  const ctx = document.getElementById('timeSeriesChart').getContext('2d');
+  
+  if (timeSeriesChart) {
+    timeSeriesChart.destroy();
+  }
+  
+  // Prepare datasets - one line per digit
+  const datasets = [];
+  for (let digit = 0; digit < currentBase; digit++) {
+    datasets.push({
+      label: digitLabels[digit],
+      data: [],
+      borderColor: digitColors[digit],
+      backgroundColor: digitColors[digit].replace('60%', '20%'),
+      borderWidth: 2,
+      fill: false,
+      tension: 0.1,
+      pointRadius: 0,
+      pointHoverRadius: 4
+    });
+  }
+  
+  timeSeriesChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { 
+          display: true,
+          position: 'right',
+          labels: {
+            boxWidth: 15,
+            font: { size: 10 }
+          }
+        },
+        title: {
+          display: true,
+          text: `Count Evolution Over Time - ${getAlgorithmName()} (Base ${currentBase})`,
+          font: { size: 16, weight: 'bold' }
+        },
+        datalabels: {
+          display: false // No labels on time series
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Count' }
+        },
+        x: {
+          title: { display: true, text: 'Digits Processed' }
+        }
+      },
+      interaction: {
+        mode: 'index',
+        intersect: false
+      }
+    }
+  });
+}
+
+// Update time series chart with new data
+function updateTimeSeriesChart() {
+  if (!timeSeriesChart) return;
+  
+  // Add current step to time series data
+  timeSeriesData.push({
+    step: currentDigitIndex,
+    counts: [...counts]
+  });
+  
+  // Update chart data
+  timeSeriesChart.data.labels = timeSeriesData.map(d => d.step);
+  
+  for (let digit = 0; digit < currentBase; digit++) {
+    timeSeriesChart.data.datasets[digit].data = timeSeriesData.map(d => d.counts[digit]);
+  }
+  
+  timeSeriesChart.update('none'); // 'none' mode for better performance
 }
 
 // Statistics calculation
@@ -821,6 +921,7 @@ async function calculate() {
   
   counts = new Array(currentBase).fill(0);
   currentDigitIndex = 0;
+  timeSeriesData = [];
   
   document.getElementById('digitSequence').value = '';
   document.getElementById('liveDigit').textContent = 'Not started';
@@ -875,6 +976,9 @@ function updateChart() {
   );
   
   myChart.update('none');
+  
+  // Update time series chart
+  updateTimeSeriesChart();
 }
 
 function finishCalculation() {
@@ -919,6 +1023,7 @@ async function stepGeneration() {
     isPaused = true;
     currentDigitIndex = 0;
     counts = new Array(currentBase).fill(0);
+    timeSeriesData = [];
     
     document.getElementById('digitSequence').value = '';
     document.getElementById('liveDigit').textContent = 'Stepping...';
@@ -964,6 +1069,7 @@ function reset() {
   currentDigitIndex = 0;
   counts = new Array(currentBase).fill(0);
   submittedGuess = null;
+  timeSeriesData = [];
   
   document.getElementById('digitSequence').value = '';
   document.getElementById('liveDigit').textContent = 'Not started';
