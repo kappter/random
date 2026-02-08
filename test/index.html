@@ -6,117 +6,158 @@
     <title>Live Random Calculator - Enhanced</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
-    <h1>Live Random Calculator</h1>
-    
-    <!-- Algorithm Information Panel -->
-    <div id="algorithmInfo" class="info-panel">
-        <h3 id="algoName">Algorithm: Pi Digits</h3>
-        <div class="algo-metadata">
-            <span class="badge type-badge" id="algoType">Deterministic</span>
-            <span class="badge dist-badge" id="algoDistribution">Uniform</span>
+    <div class="container">
+        <h1>Live Random Calculator</h1>
+        
+        <!-- Algorithm Information Panel -->
+        <div class="algorithm-info">
+            <h2 id="algorithmName">Algorithm: Pi Digits</h2>
+            <div class="algorithm-badges">
+                <span class="badge badge-type" id="algorithmType">Deterministic</span>
+                <span class="badge badge-distribution" id="algorithmDistribution">Uniform (Expected)</span>
+            </div>
+            <p id="algorithmDescription">Uses the digits of Pi. While deterministic, Pi digits are expected to be uniformly distributed across all bases.</p>
+            
+            <!-- New: Detailed Information Section -->
+            <div class="algorithm-details">
+                <div class="detail-section">
+                    <h4>📚 Basic Information</h4>
+                    <p id="algorithmBasicInfo">Pi's digits have been studied extensively and appear random despite being deterministic.</p>
+                </div>
+                <div class="detail-section">
+                    <h4>⚙️ Technical Details</h4>
+                    <p id="algorithmTechnicalInfo">Commonly used in demonstrations and educational contexts. Not suitable for cryptography.</p>
+                </div>
+                <div class="detail-section">
+                    <h4>💡 Common Use Cases</h4>
+                    <p id="algorithmUseCases">Education, demonstrations, testing statistical analysis tools.</p>
+                </div>
+                <div class="detail-section">
+                    <h4>💻 Programming Language Usage</h4>
+                    <p id="algorithmLanguageUsage">Not used as a default PRNG in any major programming language.</p>
+                </div>
+            </div>
+            
+            <!-- Statistics Grid -->
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Mean: <span class="info-icon" title="Average digit value. For uniform distribution in base N, expected mean is (N-1)/2. E.g., base 10 expects ~4.5, base 2 expects ~0.5">ℹ️</span></span>
+                    <span class="stat-value" id="statMean">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Std Dev: <span class="info-icon" title="Standard Deviation measures spread of values. Lower values mean digits cluster near the mean; higher values mean more spread. For uniform distribution, expected ~√((N²-1)/12)">ℹ️</span></span>
+                    <span class="stat-value" id="statStdDev">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Chi-Square: <span class="info-icon" title="Chi-Square test measures how well the distribution matches expected uniform distribution. Lower is better. Values < 10 are excellent, < 20 are good. High values indicate non-uniform patterns">ℹ️</span></span>
+                    <span class="stat-value" id="statChiSquare">-</span>
+                </div>
+            </div>
         </div>
-        <p id="algoDescription">
-            Uses precomputed digits of Pi. Expected to be uniformly distributed.
-        </p>
-        <div id="algoStats" class="stats-grid">
-            <div class="stat-item">
-                <span class="stat-label">Mean:</span>
-                <strong id="statMean">-</strong>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Std Dev:</span>
-                <strong id="statStdDev">-</strong>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Chi-Square:</span>
-                <strong id="statChiSquare">-</strong>
-            </div>
-        </div>
-    </div>
 
-    <!-- Base System Selection -->
-    <div class="control-row">
+        <!-- Base System Selector -->
         <div class="control-group">
-            <label for="baseSystem">Number Base (2-12):</label>
-            <input type="number" id="baseSystem" min="2" max="12" value="10">
-            <button onclick="updateBase()" class="secondary-btn">Apply Base</button>
-            <span id="baseInfo" class="info-badge">Base 10 (Decimal)</span>
+            <label for="baseSystem">Number Base (2-16):</label>
+            <input type="number" id="baseSystem" min="2" max="16" value="10">
+            <button onclick="applyBase()">Apply Base</button>
+            <span class="badge badge-info" id="baseInfo">Base 10 (Decimal)</span>
         </div>
-    </div>
 
-    <!-- Main Controls -->
-    <div class="control-row">
+        <!-- Controls -->
         <div class="control-group">
             <label for="digits">Number of Digits (100-10000):</label>
-            <input type="number" id="digits" min="100" max="10000" value="100">
+            <input type="number" id="digits" min="100" max="10000" value="100" step="100">
         </div>
+
         <div class="control-group">
             <label for="calcType">Algorithm:</label>
-            <select id="calcType" onchange="updateAlgorithmInfo()">
+            <select id="calcType">
                 <option value="pi">Pi Digits</option>
-                <option value="gaussian">Gaussian Digits</option>
-                <option value="perlin">Perlin Noise Digits</option>
-                <option value="lcg">LCG Digits</option>
+                <option value="gaussian">Gaussian Distribution</option>
+                <option value="perlin">Perlin Noise</option>
+                <option value="lcg">Linear Congruential Generator</option>
                 <option value="mersenne">Mersenne Twister</option>
                 <option value="logistic">Logistic Map</option>
-                <option value="middleSquare">Middle-Square</option>
+                <option value="middleSquare">Middle-Square Method</option>
                 <option value="xorshift">Xorshift</option>
                 <option value="quantum">Quantum Random (API)</option>
                 <option value="rule30">Cellular Automaton Rule 30</option>
             </select>
         </div>
-    </div>
 
-    <div class="control-row">
         <div class="control-group">
             <label for="updateFrequency">Update Frequency:</label>
             <select id="updateFrequency">
-                <option value="10">Every 10 digits</option>
-                <option value="50" selected>Every 50 digits</option>
-                <option value="100">Every 100 digits</option>
-                <option value="500">Every 500 digits</option>
+                <option value="Every 10 digits">Every 10 digits</option>
+                <option value="Every 50 digits" selected>Every 50 digits</option>
+                <option value="Every 100 digits">Every 100 digits</option>
+                <option value="Every 500 digits">Every 500 digits</option>
             </select>
         </div>
-    </div>
 
-    <!-- Action Buttons -->
-    <div class="button-row">
-        <button onclick="validateAndCalculate()" class="primary-btn">Calculate</button>
-        <button id="pauseBtn" onclick="togglePause()" class="secondary-btn" disabled>Pause</button>
-        <button onclick="resetCalculation()" class="secondary-btn">Reset</button>
-    </div>
+        <div class="control-group">
+            <label for="speedControl">Generation Speed: <span id="speedValue">100ms</span></label>
+            <input type="range" id="speedControl" min="10" max="1000" value="100" step="10">
+            <div class="speed-labels">
+                <span>Fast (10ms)</span>
+                <span>Slow (1000ms)</span>
+            </div>
+        </div>
 
-    <!-- Guess Section -->
-    <div id="guessSection">
-        <h2>Guess Which Digit Will Have the Most Instances</h2>
-        <input type="text" id="guess" placeholder="Enter digit (e.g., 0-9, A, B)" maxlength="1">
-        <button onclick="submitGuess()" id="submitGuess">Submit Guess</button>
-        <button onclick="toggleGuessSection()">Hide Guess Section</button>
-        <p id="guessResult"></p>
-    </div>
+        <div class="button-group">
+            <button onclick="calculate()">Calculate</button>
+            <button id="stepBtn" onclick="stepGeneration()">Step</button>
+            <button id="pauseBtn" onclick="pauseResume()">Pause</button>
+            <button onclick="reset()">Reset</button>
+        </div>
 
-    <!-- Live Status -->
-    <div class="status-bar">
-        <p>Live Digit: <span id="liveDigit">Not started</span></p>
-        <p id="progress">Processed: 0 digits</p>
-    </div>
+        <!-- Guess Section -->
+        <div id="guessSection" class="guess-section">
+            <h3>Guess Which Digit Will Have the Most Instances</h3>
+            <input type="text" id="guess" placeholder="Enter digit (e.g., 0-9, A, B)" maxlength="1">
+            <button id="submitGuess" onclick="submitGuess()">Submit Guess</button>
+            <button onclick="toggleGuessSection()">Hide Guess Section</button>
+            <p id="guessResult"></p>
+        </div>
 
-    <!-- Chart -->
-    <div class="chart-container">
-        <canvas id="digitChart"></canvas>
-    </div>
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span>Live Digit: <strong id="liveDigit">Not started</strong></span>
+            <span>Processed: <strong id="processedCount">0</strong> digits</span>
+        </div>
 
-    <!-- Results -->
-    <div class="results-container">
-        <div id="summaryReport"></div>
-        <div class="digit-sequence-container">
-            <label for="digitSequence">Generated Digits:</label>
-            <textarea id="digitSequence" readonly rows="5" cols="30" placeholder="Digits will appear here as they are generated..."></textarea>
-            <br>
-            <button onclick="copyDigits()">Copy Digits</button>
+        <!-- Chart Containers -->
+        <div class="chart-container">
+            <canvas id="digitChart"></canvas>
+        </div>
+        
+        <!-- View Toggle -->
+        <div class="view-toggle">
+            <button id="timeSeriesBtn" class="toggle-btn active" onclick="showTimeSeriesView()">📈 Time Series</button>
+            <button id="spiralBtn" class="toggle-btn" onclick="showSpiralView()">🌀 Spiral</button>
+        </div>
+        
+        <div class="chart-container" id="timeSeriesContainer">
+            <canvas id="timeSeriesChart"></canvas>
+        </div>
+        
+        <div class="chart-container" id="spiralContainer" style="display:none;">
+            <canvas id="spiralCanvas" width="800" height="800"></canvas>
+        </div>
+
+        <!-- Results -->
+        <div class="results">
+            <div id="summaryReport"></div>
+            <div class="digit-output">
+                <h3>Generated Digits:</h3>
+                <textarea id="digitSequence" readonly placeholder="Digits will appear here as they are generated..."></textarea>
+                <button onclick="copyDigits()">Copy Digits</button>
+            </div>
         </div>
     </div>
 
