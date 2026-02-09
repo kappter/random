@@ -136,8 +136,18 @@
             <canvas id="digitChart"></canvas>
         </div>
         
-        <div class="chart-container">
+        <!-- View Toggle -->
+        <div class="view-toggle">
+            <button id="timeSeriesBtn" class="toggle-btn active" onclick="showTimeSeriesView()">📈 Time Series</button>
+            <button id="spiralBtn" class="toggle-btn" onclick="showSpiralView()">🌀 Spiral</button>
+        </div>
+        
+        <div class="chart-container" id="timeSeriesContainer">
             <canvas id="timeSeriesChart"></canvas>
+        </div>
+        
+        <div class="chart-container" id="spiralContainer" style="display:none;">
+            <canvas id="spiralCanvas" width="800" height="800"></canvas>
         </div>
 
         <!-- Results -->

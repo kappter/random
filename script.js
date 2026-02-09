@@ -12,6 +12,11 @@ let digitGenerator = null;
 let currentDigitIndex = 0;
 let generationSpeed = 100; // milliseconds per digit
 let timeSeriesData = []; // Array of snapshots: [{step: 0, counts: [0,0,0...]}, ...]
+let spiralCanvas = null; // Radial polygon canvas
+let spiralCtx = null;
+let currentRotation = 0; // Current rotation angle in radians
+let targetRotation = 0; // Target rotation angle for smooth easing
+let rotationSpeed = 0.1; // Easing speed (0-1, higher = faster)
 
 // Base system names
 const BaseNames = {
@@ -238,8 +243,11 @@ function initializeBase(base) {
   createChart();
   createTimeSeriesChart();
   
-  // Reset time series data
+  // Reset time series data and spiral
   timeSeriesData = [];
+  if (spiralCtx) {
+    clearSpiral();
+  }
   
   // Update guess placeholder
   const guessInput = document.getElementById('guess');
@@ -495,6 +503,183 @@ function updateTimeSeriesChart() {
   }
   
   timeSeriesChart.update('none'); // 'none' mode for better performance
+}
+
+// Radial Polygon Visualization Functions
+function initSpiralCanvas() {
+  spiralCanvas = document.getElementById('spiralCanvas');
+  if (!spiralCanvas) return;
+  spiralCtx = spiralCanvas.getContext('2d');
+  currentRotation = 0;
+  targetRotation = 0;
+  drawRadialPolygon();
+}
+
+function drawRadialPolygon() {
+  if (!spiralCtx) return;
+  
+  // Clear canvas
+  spiralCtx.fillStyle = '#f8f9fa';
+  spiralCtx.fillRect(0, 0, spiralCanvas.width, spiralCanvas.height);
+  
+  // Draw title
+  spiralCtx.fillStyle = '#333';
+  spiralCtx.font = 'bold 18px Arial';
+  spiralCtx.textAlign = 'center';
+  spiralCtx.fillText(`Radial Distribution - ${getAlgorithmName()} (Base ${currentBase})`, spiralCanvas.width / 2, 30);
+  
+  const centerX = spiralCanvas.width / 2;
+  const centerY = spiralCanvas.height / 2 + 20; // Offset for title
+  const maxRadius = Math.min(spiralCanvas.width, spiralCanvas.height) / 2 - 80;
+  
+  // Calculate total and max for scaling
+  const total = counts.reduce((sum, c) => sum + c, 0);
+  if (total === 0) {
+    // Draw empty polygon with equal slices
+    drawEmptyPolygon(centerX, centerY, maxRadius * 0.3);
+    return;
+  }
+  
+  const maxCount = Math.max(...counts);
+  
+  // Calculate which digit is winning and target rotation
+  const winnerIndex = counts.indexOf(maxCount);
+  updateTargetRotation(winnerIndex);
+  
+  // Smooth rotation easing
+  if (Math.abs(targetRotation - currentRotation) > 0.01) {
+    currentRotation += (targetRotation - currentRotation) * rotationSpeed;
+  } else {
+    currentRotation = targetRotation;
+  }
+  
+  // Draw each slice
+  const anglePerSlice = (Math.PI * 2) / currentBase;
+  
+  for (let i = 0; i < currentBase; i++) {
+    const count = counts[i];
+    const radius = maxRadius * (count / maxCount) * 0.8 + maxRadius * 0.2; // Min 20% of max radius
+    
+    // Calculate angle for this slice (starting at top, going clockwise)
+    const startAngle = -Math.PI / 2 + (i * anglePerSlice) + currentRotation;
+    const endAngle = startAngle + anglePerSlice;
+    
+    // Draw slice
+    spiralCtx.fillStyle = digitColors[i];
+    spiralCtx.beginPath();
+    spiralCtx.moveTo(centerX, centerY);
+    spiralCtx.arc(centerX, centerY, radius, startAngle, endAngle);
+    spiralCtx.closePath();
+    spiralCtx.fill();
+    
+    // Draw slice border
+    spiralCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    spiralCtx.lineWidth = 2;
+    spiralCtx.stroke();
+    
+    // Draw tally number on the slice
+    const midAngle = (startAngle + endAngle) / 2;
+    const textRadius = radius * 0.7;
+    const textX = centerX + textRadius * Math.cos(midAngle);
+    const textY = centerY + textRadius * Math.sin(midAngle);
+    
+    spiralCtx.save();
+    spiralCtx.translate(textX, textY);
+    spiralCtx.fillStyle = '#fff';
+    spiralCtx.strokeStyle = '#333';
+    spiralCtx.lineWidth = 3;
+    spiralCtx.font = 'bold 16px Arial';
+    spiralCtx.textAlign = 'center';
+    spiralCtx.textBaseline = 'middle';
+    
+    // Draw digit label and count
+    const label = digitLabels[i];
+    const text = `${label}: ${count}`;
+    spiralCtx.strokeText(text, 0, 0);
+    spiralCtx.fillText(text, 0, 0);
+    spiralCtx.restore();
+  }
+  
+  // Draw center circle
+  spiralCtx.fillStyle = '#fff';
+  spiralCtx.beginPath();
+  spiralCtx.arc(centerX, centerY, 30, 0, Math.PI * 2);
+  spiralCtx.fill();
+  spiralCtx.strokeStyle = '#667eea';
+  spiralCtx.lineWidth = 3;
+  spiralCtx.stroke();
+  
+  // Draw total in center
+  spiralCtx.fillStyle = '#333';
+  spiralCtx.font = 'bold 14px Arial';
+  spiralCtx.textAlign = 'center';
+  spiralCtx.textBaseline = 'middle';
+  spiralCtx.fillText(total, centerX, centerY);
+}
+
+function drawEmptyPolygon(centerX, centerY, radius) {
+  const anglePerSlice = (Math.PI * 2) / currentBase;
+  
+  for (let i = 0; i < currentBase; i++) {
+    const startAngle = -Math.PI / 2 + (i * anglePerSlice);
+    const endAngle = startAngle + anglePerSlice;
+    
+    spiralCtx.fillStyle = digitColors[i];
+    spiralCtx.globalAlpha = 0.3;
+    spiralCtx.beginPath();
+    spiralCtx.moveTo(centerX, centerY);
+    spiralCtx.arc(centerX, centerY, radius, startAngle, endAngle);
+    spiralCtx.closePath();
+    spiralCtx.fill();
+    
+    spiralCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    spiralCtx.lineWidth = 2;
+    spiralCtx.stroke();
+    spiralCtx.globalAlpha = 1.0;
+  }
+}
+
+function updateTargetRotation(winnerIndex) {
+  // Calculate the angle where the winner should be (top = -PI/2)
+  const anglePerSlice = (Math.PI * 2) / currentBase;
+  const winnerAngle = winnerIndex * anglePerSlice;
+  
+  // Target rotation to bring winner to top
+  let newTarget = -winnerAngle;
+  
+  // Normalize to shortest rotation path
+  while (newTarget - currentRotation > Math.PI) newTarget -= Math.PI * 2;
+  while (newTarget - currentRotation < -Math.PI) newTarget += Math.PI * 2;
+  
+  targetRotation = newTarget;
+}
+
+function updateSpiral() {
+  drawRadialPolygon();
+}
+
+function clearSpiral() {
+  currentRotation = 0;
+  targetRotation = 0;
+  if (spiralCtx) {
+    drawRadialPolygon();
+  }
+}
+
+// View toggle functions
+function showTimeSeriesView() {
+  document.getElementById('timeSeriesContainer').style.display = 'block';
+  document.getElementById('spiralContainer').style.display = 'none';
+  document.getElementById('timeSeriesBtn').classList.add('active');
+  document.getElementById('spiralBtn').classList.remove('active');
+}
+
+function showSpiralView() {
+  document.getElementById('timeSeriesContainer').style.display = 'none';
+  document.getElementById('spiralContainer').style.display = 'block';
+  document.getElementById('timeSeriesBtn').classList.remove('active');
+  document.getElementById('spiralBtn').classList.add('active');
+  drawRadialPolygon(); // Redraw in case it needs updating
 }
 
 // Statistics calculation
@@ -922,6 +1107,9 @@ async function calculate() {
   counts = new Array(currentBase).fill(0);
   currentDigitIndex = 0;
   timeSeriesData = [];
+  if (spiralCtx) {
+    clearSpiral();
+  }
   
   document.getElementById('digitSequence').value = '';
   document.getElementById('liveDigit').textContent = 'Not started';
@@ -943,7 +1131,9 @@ async function calculate() {
       const digit = result.value;
       counts[digit]++;
       currentDigitIndex++;
-
+      
+      // Update spiral visualization
+      updateSpiral();
       
       const digitStr = digitLabels[digit];
       document.getElementById('digitSequence').value += digitStr;
@@ -1024,6 +1214,10 @@ async function stepGeneration() {
     currentDigitIndex = 0;
     counts = new Array(currentBase).fill(0);
     timeSeriesData = [];
+    spiralDigits = [];
+    if (spiralCtx) {
+      clearSpiral();
+    }
     
     document.getElementById('digitSequence').value = '';
     document.getElementById('liveDigit').textContent = 'Stepping...';
@@ -1049,6 +1243,9 @@ async function stepGeneration() {
     counts[digit]++;
     currentDigitIndex++;
     
+    // Update spiral visualization
+    updateSpiral();
+    
     const digitStr = digitLabels[digit];
     document.getElementById('digitSequence').value += digitStr;
     document.getElementById('liveDigit').textContent = digitStr;
@@ -1070,6 +1267,9 @@ function reset() {
   counts = new Array(currentBase).fill(0);
   submittedGuess = null;
   timeSeriesData = [];
+  if (spiralCtx) {
+    clearSpiral();
+  }
   
   document.getElementById('digitSequence').value = '';
   document.getElementById('liveDigit').textContent = 'Not started';
@@ -1154,6 +1354,7 @@ function applyBase() {
 document.addEventListener('DOMContentLoaded', () => {
   initializeBase(10);
   updateAlgorithmInfo();
+  initSpiralCanvas();
   
   document.getElementById('calcType').addEventListener('change', updateAlgorithmInfo);
   
