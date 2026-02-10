@@ -1,3 +1,503 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+}
+
+/* Algorithm Information Panel */
+.algorithm-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.algorithm-info h2 {
+    font-size: 1.6em;
+    margin-bottom: 12px;
+}
+
+.algorithm-badges {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-type {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.badge-distribution {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.badge-info {
+    background: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.algorithm-info p {
+    font-size: 1.05em;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    opacity: 0.95;
+}
+
+/* Detailed Information Sections */
+.algorithm-details {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.detail-section {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.detail-section h4 {
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.detail-section p {
+    font-size: 0.95em;
+    line-height: 1.5;
+    margin-bottom: 0;
+}
+
+/* Statistics Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.9em;
+    opacity: 0.9;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.8em;
+    font-weight: bold;
+}
+
+.info-icon {
+    cursor: help;
+    font-size: 0.9em;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.info-icon:hover {
+    opacity: 1;
+}
+
+/* Controls */
+.control-group {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.control-group label {
+    font-weight: 600;
+    color: #555;
+    min-width: 200px;
+}
+
+.control-group input[type="number"],
+.control-group select {
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 1em;
+    flex: 1;
+    min-width: 150px;
+}
+
+.control-group input[type="number"]:focus,
+.control-group select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* Buttons */
+button {
+    padding: 12px 24px;
+    font-size: 1em;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.button-group button:first-child {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.button-group button:first-child:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.button-group button:nth-child(2) {
+    background: #4CAF50;
+    color: white;
+}
+
+.button-group button:nth-child(2):hover {
+    background: #45a049;
+}
+
+.button-group button:nth-child(3) {
+    background: #FFC107;
+    color: #333;
+}
+
+.button-group button:nth-child(3):hover {
+    background: #FFB300;
+}
+
+.button-group button:nth-child(4) {
+    background: #f44336;
+    color: white;
+}
+
+.button-group button:nth-child(4):hover {
+    background: #d32f2f;
+}
+
+.control-group button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.control-group button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* Guess Section */
+.guess-section {
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+}
+
+.guess-section h3 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.guess-section input {
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 1em;
+    width: 150px;
+    margin-right: 10px;
+}
+
+.guess-section button {
+    background: #4CAF50;
+    color: white;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.guess-section button:hover {
+    background: #45a049;
+}
+
+.guess-section button:last-of-type {
+    background: #9E9E9E;
+}
+
+.guess-section button:last-of-type:hover {
+    background: #757575;
+}
+
+#guessResult {
+    margin-top: 15px;
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1em;
+}
+
+/* Status Bar */
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    font-size: 1.05em;
+}
+
+.status-bar strong {
+    color: #667eea;
+}
+
+/* Chart */
+.chart-container {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #fafafa;
+    border-radius: 10px;
+    border: 2px dashed #ddd;
+}
+
+#digitChart {
+    max-height: 400px;
+}
+
+/* Results */
+.results {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 25px;
+}
+
+#summaryReport {
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+#summaryReport h3 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+#summaryReport p {
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.digit-output {
+    background: #f5f5f5;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.digit-output h3 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+#digitSequence {
+    width: 100%;
+    height: 200px;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+    resize: vertical;
+    margin-bottom: 10px;
+}
+
+.digit-output button {
+    background: #2196F3;
+    color: white;
+    width: 100%;
+}
+
+.digit-output button:hover {
+    background: #1976D2;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+    
+    h1 {
+        font-size: 2em;
+    }
+    
+    .control-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .control-group label {
+        min-width: auto;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .algorithm-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .results {
+        grid-template-columns: 1fr;
+    }
+    
+    .status-bar {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+/* Optgroup styling */
+select optgroup {
+    font-weight: bold;
+    font-style: normal;
+    color: #667eea;
+}
+
+select option {
+    font-weight: normal;
+    color: #333;
+}
+
+select option:disabled {
+    color: #999;
+    font-style: italic;
+}
+
+/* Speed Control Slider */
+#speedControl {
+    width: 100%;
+    height: 8px;
+    border-radius: 5px;
+    background: linear-gradient(to right, #4CAF50, #FFC107, #F44336);
+    outline: none;
+    -webkit-appearance: none;
+    margin: 10px 0;
+}
+
+#speedControl::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+#speedControl::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    border: none;
+}
+
+.speed-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85em;
+    color: #666;
+    margin-top: -5px;
+}
+
+#speedValue {
+    font-weight: bold;
+    color: #667eea;
+}
+
+/* Chart Legend */
+.chart-legend {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 0.95em;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.chart-legend strong {
+    font-size: 1.1em;
+    margin-right: 8px;
+}
+
+/* View Toggle Buttons */
 .view-toggle {
     display: flex;
     justify-content: center;
@@ -35,4 +535,267 @@
     background: #f8f9fa;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background: linear-gradient(135deg, #3a3530 0%, #2a2520 100%);
+}
+
+body.dark-mode .container {
+    background: #2a2520;
+    color: #f5f0e8;
+}
+
+body.dark-mode h1 {
+    color: #f5f0e8;
+}
+
+body.dark-mode .algorithm-info {
+    background: linear-gradient(135deg, #6b5d4f 0%, #5a4d3f 100%);
+    color: #f5f0e8;
+}
+
+body.dark-mode .detail-section {
+    background: rgba(107, 93, 79, 0.3);
+    border-color: rgba(168, 198, 159, 0.2);
+}
+
+body.dark-mode .control-group label {
+    color: #d4cfc5;
+}
+
+body.dark-mode .control-group input[type="number"],
+body.dark-mode .control-group select {
+    background: #3a3530;
+    color: #f5f0e8;
+    border-color: #5a5550;
+}
+
+body.dark-mode .control-group input[type="number"]:focus,
+body.dark-mode .control-group select:focus {
+    border-color: #8b7355;
+}
+
+body.dark-mode select optgroup {
+    color: #a8c69f;
+}
+
+body.dark-mode select option {
+    color: #f5f0e8;
+    background: #3a3530;
+}
+
+body.dark-mode .button-group button:first-child {
+    background: linear-gradient(135deg, #6b5d4f 0%, #5a4d3f 100%);
+}
+
+body.dark-mode .button-group button:first-child:hover {
+    box-shadow: 0 5px 15px rgba(107, 93, 79, 0.4);
+}
+
+body.dark-mode .button-group button:nth-child(2) {
+    background: #7a9b6e;
+}
+
+body.dark-mode .button-group button:nth-child(2):hover {
+    background: #6a8b5e;
+}
+
+body.dark-mode .button-group button:nth-child(3) {
+    background: #c4a35a;
+    color: #2a2520;
+}
+
+body.dark-mode .button-group button:nth-child(3):hover {
+    background: #b49350;
+}
+
+body.dark-mode .button-group button:nth-child(4) {
+    background: #b85c5c;
+}
+
+body.dark-mode .button-group button:nth-child(4):hover {
+    background: #a84c4c;
+}
+
+body.dark-mode .control-group button {
+    background: linear-gradient(135deg, #6b5d4f 0%, #5a4d3f 100%);
+}
+
+body.dark-mode .control-group button:hover {
+    box-shadow: 0 5px 15px rgba(107, 93, 79, 0.4);
+}
+
+body.dark-mode .guess-section {
+    background: #3a3530;
+}
+
+body.dark-mode .guess-section h3 {
+    color: #f5f0e8;
+}
+
+body.dark-mode .guess-section input {
+    background: #2a2520;
+    color: #f5f0e8;
+    border-color: #5a5550;
+}
+
+body.dark-mode .guess-section button {
+    background: #7a9b6e;
+}
+
+body.dark-mode .guess-section button:hover {
+    background: #6a8b5e;
+}
+
+body.dark-mode .guess-section button:last-of-type {
+    background: #5a5550;
+}
+
+body.dark-mode .guess-section button:last-of-type:hover {
+    background: #6a6560;
+}
+
+body.dark-mode #guessResult {
+    color: #f5f0e8;
+}
+
+body.dark-mode .status-bar {
+    background: #3a3530;
+    color: #f5f0e8;
+}
+
+body.dark-mode .status-bar strong {
+    color: #a8c69f;
+}
+
+body.dark-mode .chart-container {
+    background: #3a3530;
+    border-color: #5a5550;
+}
+
+body.dark-mode #summaryReport {
+    background: #3a3530;
+}
+
+body.dark-mode #summaryReport h3 {
+    color: #f5f0e8;
+}
+
+body.dark-mode #summaryReport p {
+    color: #d4cfc5;
+}
+
+body.dark-mode .digit-output {
+    background: #3a3530;
+}
+
+body.dark-mode .digit-output h3 {
+    color: #f5f0e8;
+}
+
+body.dark-mode #digitSequence {
+    background: #2a2520;
+    color: #f5f0e8;
+    border-color: #5a5550;
+}
+
+body.dark-mode .digit-output button {
+    background: #6b5d4f;
+}
+
+body.dark-mode .digit-output button:hover {
+    background: #7b6d5f;
+}
+
+body.dark-mode .toggle-btn {
+    background: #3a3530;
+    color: #a8c69f;
+    border-color: #6b5d4f;
+}
+
+body.dark-mode .toggle-btn:hover {
+    box-shadow: 0 4px 12px rgba(107, 93, 79, 0.3);
+}
+
+body.dark-mode .toggle-btn.active {
+    background: linear-gradient(135deg, #6b5d4f 0%, #5a4d3f 100%);
+    color: #f5f0e8;
+    border-color: #8b7355;
+}
+
+body.dark-mode #spiralCanvas {
+    background: #3a3530;
+}
+
+body.dark-mode #speedValue {
+    color: #a8c69f;
+}
+
+body.dark-mode .speed-labels {
+    color: #d4cfc5;
+}
+
+/* Dark Mode Toggle Button */
+.dark-mode-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.dark-mode-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .dark-mode-toggle {
+    background: linear-gradient(135deg, #6b5d4f 0%, #5a4d3f 100%);
+}
+
+/* Algorithm Info Panel - Earthy Dark Mode */
+body.dark-mode .algorithm-info {
+    background: linear-gradient(135deg, #4a3f35 0%, #3a3530 100%) !important;
+}
+
+body.dark-mode .algorithm-info h2 {
+    color: #f5f0e8;
+}
+
+body.dark-mode .algorithm-info .badge {
+    background: #6b5d4f;
+    color: #f5f0e8;
+}
+
+body.dark-mode .algorithm-info .info-card {
+    background: rgba(107, 93, 79, 0.2);
+    border-color: rgba(107, 93, 79, 0.3);
+}
+
+body.dark-mode .algorithm-info .info-card h4 {
+    color: #a8c69f;
+}
+
+body.dark-mode .algorithm-info .info-card p {
+    color: #d4cfc5;
+}
+
+body.dark-mode .stat-value {
+    color: #a8c69f;
+}
+
+/* Ensure chart text is readable in dark mode */
+body.dark-mode canvas {
+    filter: brightness(1.1);
 }
