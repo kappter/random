@@ -780,15 +780,26 @@ function* randuGenerator(base) {
 
 // Sobol Sequence (simplified 1D version)
 function* sobolGenerator(base) {
-  let index = 1;
-  const directionNumbers = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048];
+  let index = 0;
+  const maxValue = 2147483648; // 2^31 for better precision
+  const directionNumbers = [
+    1073741824, 536870912, 268435456, 134217728,
+    67108864, 33554432, 16777216, 8388608,
+    4194304, 2097152, 1048576, 524288,
+    262144, 131072, 65536, 32768,
+    16384, 8192, 4096, 2048,
+    1024, 512, 256, 128,
+    64, 32, 16, 8,
+    4, 2, 1
+  ];
   
   while (true) {
     let value = 0;
     let i = index;
     let j = 0;
     
-    while (i > 0) {
+    // Gray code XOR with direction numbers
+    while (i > 0 && j < directionNumbers.length) {
       if (i & 1) {
         value ^= directionNumbers[j];
       }
@@ -796,8 +807,8 @@ function* sobolGenerator(base) {
       j++;
     }
     
-    // Normalize to [0, 1)
-    const normalized = value / 4096;
+    // Normalize to [0, 1) and convert to digit
+    const normalized = value / maxValue;
     const digit = Math.floor(normalized * base) % base;
     
     index++;
@@ -1365,5 +1376,32 @@ document.addEventListener('DOMContentLoaded', () => {
   speedControl.addEventListener('input', (e) => {
     generationSpeed = parseInt(e.target.value);
     speedValue.textContent = `${generationSpeed}ms`;
+  });
+  
+  // Dark mode toggle
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+  
+  if (savedDarkMode) {
+    document.body.classList.add('dark-mode');
+    darkModeToggle.textContent = '☀️ Light Mode';
+  }
+  
+  darkModeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    darkModeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+    localStorage.setItem('darkMode', isDarkMode);
+    
+    // Update charts for dark mode
+    if (myChart) {
+      myChart.update();
+    }
+    if (timeSeriesChart) {
+      timeSeriesChart.update();
+    }
+    if (spiralCanvas) {
+      drawRadialPolygon();
+    }
   });
 });

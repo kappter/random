@@ -536,3 +536,266 @@ select option:disabled {
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background: linear-gradient(135deg, #3a3530 0%, #2a2520 100%);
+}
+
+body.dark-mode .container {
+    background: #2a2520;
+    color: #f5f0e8;
+}
+
+body.dark-mode h1 {
+    color: #f5f0e8;
+}
+
+body.dark-mode .algorithm-info {
+    background: linear-gradient(135deg, #6b5d4f 0%, #5a4d3f 100%);
+    color: #f5f0e8;
+}
+
+body.dark-mode .detail-section {
+    background: rgba(107, 93, 79, 0.3);
+    border-color: rgba(168, 198, 159, 0.2);
+}
+
+body.dark-mode .control-group label {
+    color: #d4cfc5;
+}
+
+body.dark-mode .control-group input[type="number"],
+body.dark-mode .control-group select {
+    background: #3a3530;
+    color: #f5f0e8;
+    border-color: #5a5550;
+}
+
+body.dark-mode .control-group input[type="number"]:focus,
+body.dark-mode .control-group select:focus {
+    border-color: #8b7355;
+}
+
+body.dark-mode select optgroup {
+    color: #a8c69f;
+}
+
+body.dark-mode select option {
+    color: #f5f0e8;
+    background: #3a3530;
+}
+
+body.dark-mode .button-group button:first-child {
+    background: linear-gradient(135deg, #6b5d4f 0%, #5a4d3f 100%);
+}
+
+body.dark-mode .button-group button:first-child:hover {
+    box-shadow: 0 5px 15px rgba(107, 93, 79, 0.4);
+}
+
+body.dark-mode .button-group button:nth-child(2) {
+    background: #7a9b6e;
+}
+
+body.dark-mode .button-group button:nth-child(2):hover {
+    background: #6a8b5e;
+}
+
+body.dark-mode .button-group button:nth-child(3) {
+    background: #c4a35a;
+    color: #2a2520;
+}
+
+body.dark-mode .button-group button:nth-child(3):hover {
+    background: #b49350;
+}
+
+body.dark-mode .button-group button:nth-child(4) {
+    background: #b85c5c;
+}
+
+body.dark-mode .button-group button:nth-child(4):hover {
+    background: #a84c4c;
+}
+
+body.dark-mode .control-group button {
+    background: linear-gradient(135deg, #6b5d4f 0%, #5a4d3f 100%);
+}
+
+body.dark-mode .control-group button:hover {
+    box-shadow: 0 5px 15px rgba(107, 93, 79, 0.4);
+}
+
+body.dark-mode .guess-section {
+    background: #3a3530;
+}
+
+body.dark-mode .guess-section h3 {
+    color: #f5f0e8;
+}
+
+body.dark-mode .guess-section input {
+    background: #2a2520;
+    color: #f5f0e8;
+    border-color: #5a5550;
+}
+
+body.dark-mode .guess-section button {
+    background: #7a9b6e;
+}
+
+body.dark-mode .guess-section button:hover {
+    background: #6a8b5e;
+}
+
+body.dark-mode .guess-section button:last-of-type {
+    background: #5a5550;
+}
+
+body.dark-mode .guess-section button:last-of-type:hover {
+    background: #6a6560;
+}
+
+body.dark-mode #guessResult {
+    color: #f5f0e8;
+}
+
+body.dark-mode .status-bar {
+    background: #3a3530;
+    color: #f5f0e8;
+}
+
+body.dark-mode .status-bar strong {
+    color: #a8c69f;
+}
+
+body.dark-mode .chart-container {
+    background: #3a3530;
+    border-color: #5a5550;
+}
+
+body.dark-mode #summaryReport {
+    background: #3a3530;
+}
+
+body.dark-mode #summaryReport h3 {
+    color: #f5f0e8;
+}
+
+body.dark-mode #summaryReport p {
+    color: #d4cfc5;
+}
+
+body.dark-mode .digit-output {
+    background: #3a3530;
+}
+
+body.dark-mode .digit-output h3 {
+    color: #f5f0e8;
+}
+
+body.dark-mode #digitSequence {
+    background: #2a2520;
+    color: #f5f0e8;
+    border-color: #5a5550;
+}
+
+body.dark-mode .digit-output button {
+    background: #6b5d4f;
+}
+
+body.dark-mode .digit-output button:hover {
+    background: #7b6d5f;
+}
+
+body.dark-mode .toggle-btn {
+    background: #3a3530;
+    color: #a8c69f;
+    border-color: #6b5d4f;
+}
+
+body.dark-mode .toggle-btn:hover {
+    box-shadow: 0 4px 12px rgba(107, 93, 79, 0.3);
+}
+
+body.dark-mode .toggle-btn.active {
+    background: linear-gradient(135deg, #6b5d4f 0%, #5a4d3f 100%);
+    color: #f5f0e8;
+    border-color: #8b7355;
+}
+
+body.dark-mode #spiralCanvas {
+    background: #3a3530;
+}
+
+body.dark-mode #speedValue {
+    color: #a8c69f;
+}
+
+body.dark-mode .speed-labels {
+    color: #d4cfc5;
+}
+
+/* Dark Mode Toggle Button */
+.dark-mode-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.dark-mode-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .dark-mode-toggle {
+    background: linear-gradient(135deg, #6b5d4f 0%, #5a4d3f 100%);
+}
+
+/* Algorithm Info Panel - Earthy Dark Mode */
+body.dark-mode .algorithm-info {
+    background: linear-gradient(135deg, #4a3f35 0%, #3a3530 100%) !important;
+}
+
+body.dark-mode .algorithm-info h2 {
+    color: #f5f0e8;
+}
+
+body.dark-mode .algorithm-info .badge {
+    background: #6b5d4f;
+    color: #f5f0e8;
+}
+
+body.dark-mode .algorithm-info .info-card {
+    background: rgba(107, 93, 79, 0.2);
+    border-color: rgba(107, 93, 79, 0.3);
+}
+
+body.dark-mode .algorithm-info .info-card h4 {
+    color: #a8c69f;
+}
+
+body.dark-mode .algorithm-info .info-card p {
+    color: #d4cfc5;
+}
+
+body.dark-mode .stat-value {
+    color: #a8c69f;
+}
+
+/* Ensure chart text is readable in dark mode */
+body.dark-mode canvas {
+    filter: brightness(1.1);
+}
