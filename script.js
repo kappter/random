@@ -17,6 +17,8 @@ let spiralCtx = null;
 let currentRotation = 0; // Current rotation angle in radians
 let targetRotation = 0; // Target rotation angle for smooth easing
 let rotationSpeed = 0.1; // Easing speed (0-1, higher = faster)
+let leadTime = []; // Track iterations each digit spent in the lead
+let leadTimeChart = null; // Lead time bar chart
 
 // Base system names
 const BaseNames = {
@@ -229,6 +231,7 @@ function initializeBase(base) {
   digitLabels = generateLabels(base);
   digitColors = generateColors(base);
   counts = new Array(base).fill(0);
+  leadTime = new Array(base).fill(0);
   
   // Update base info display
   const baseInfo = document.getElementById('baseInfo');
@@ -242,6 +245,7 @@ function initializeBase(base) {
   // Recreate charts
   createChart();
   createTimeSeriesChart();
+  createLeadTimeChart();
   
   // Reset time series data and spiral
   timeSeriesData = [];
@@ -485,6 +489,92 @@ function createTimeSeriesChart() {
   });
 }
 
+// Create lead time chart
+function createLeadTimeChart() {
+  const canvas = document.getElementById('leadTimeChart');
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  
+  if (leadTimeChart) {
+    leadTimeChart.destroy();
+  }
+  
+  leadTimeChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: digitLabels,
+      datasets: [{
+        label: 'Iterations in Lead',
+        data: leadTime,
+        backgroundColor: digitColors,
+        borderColor: digitColors.map(c => c.replace('60%', '40%')),
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        title: {
+          display: true,
+          text: `Lead Time - ${getAlgorithmName()} (Base ${currentBase})`,
+          font: { size: 16, weight: 'bold' }
+        },
+        datalabels: {
+          anchor: 'center',
+          align: 'center',
+          formatter: (value) => {
+            return value > 0 ? value : '';
+          },
+          color: '#fff',
+          font: { size: 14, weight: 'bold' }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Iterations in Lead' }
+        },
+        x: {
+          title: { display: true, text: `Digits (Base ${currentBase})` }
+        }
+      }
+    },
+    plugins: [ChartDataLabels]
+  });
+}
+
+// Update lead time chart with new data
+function updateLeadTimeChart() {
+  if (!leadTimeChart) return;
+  
+  leadTimeChart.data.datasets[0].data = [...leadTime];
+  leadTimeChart.update('none'); // Update without animation for performance
+}
+
+// Track lead time for each digit
+function updateLeadTime() {
+  if (counts.length === 0) return;
+  
+  // Find the maximum count
+  const maxCount = Math.max(...counts);
+  
+  // Find all digits with the maximum count (handles ties)
+  const leaders = [];
+  for (let i = 0; i < counts.length; i++) {
+    if (counts[i] === maxCount) {
+      leaders.push(i);
+    }
+  }
+  
+  // Increment lead time for all current leaders
+  for (const leader of leaders) {
+    leadTime[leader]++;
+  }
+}
+
 // Update time series chart with new data
 function updateTimeSeriesChart() {
   if (!timeSeriesChart) return;
@@ -670,16 +760,29 @@ function clearSpiral() {
 function showTimeSeriesView() {
   document.getElementById('timeSeriesContainer').style.display = 'block';
   document.getElementById('spiralContainer').style.display = 'none';
+  document.getElementById('leadTimeContainer').style.display = 'none';
   document.getElementById('timeSeriesBtn').classList.add('active');
   document.getElementById('spiralBtn').classList.remove('active');
+  document.getElementById('leadTimeBtn').classList.remove('active');
 }
 
 function showSpiralView() {
   document.getElementById('timeSeriesContainer').style.display = 'none';
   document.getElementById('spiralContainer').style.display = 'block';
+  document.getElementById('leadTimeContainer').style.display = 'none';
   document.getElementById('timeSeriesBtn').classList.remove('active');
   document.getElementById('spiralBtn').classList.add('active');
+  document.getElementById('leadTimeBtn').classList.remove('active');
   drawRadialPolygon(); // Redraw in case it needs updating
+}
+
+function showLeadTimeView() {
+  document.getElementById('timeSeriesContainer').style.display = 'none';
+  document.getElementById('spiralContainer').style.display = 'none';
+  document.getElementById('leadTimeContainer').style.display = 'block';
+  document.getElementById('timeSeriesBtn').classList.remove('active');
+  document.getElementById('spiralBtn').classList.remove('active');
+  document.getElementById('leadTimeBtn').classList.add('active');
 }
 
 // Statistics calculation
@@ -1116,6 +1219,7 @@ async function calculate() {
   const updateFreq = parseInt(document.getElementById('updateFrequency').value.split(' ')[1]);
   
   counts = new Array(currentBase).fill(0);
+  leadTime = new Array(currentBase).fill(0);
   currentDigitIndex = 0;
   timeSeriesData = [];
   if (spiralCtx) {
@@ -1143,6 +1247,9 @@ async function calculate() {
       counts[digit]++;
       currentDigitIndex++;
       
+      // Track lead time
+      updateLeadTime();
+      
       // Update spiral visualization
       updateSpiral();
       
@@ -1153,6 +1260,7 @@ async function calculate() {
       
       if (currentDigitIndex % updateFreq === 0 || currentDigitIndex === digits) {
         updateChart();
+        updateLeadTimeChart();
         updateStatistics();
         await new Promise(resolve => setTimeout(resolve, generationSpeed));
       }
@@ -1187,6 +1295,7 @@ function finishCalculation() {
   document.getElementById('liveDigit').textContent = 'Done';
   
   updateChart();
+  updateLeadTimeChart();
   updateStatistics();
   showSummary();
   
@@ -1224,8 +1333,8 @@ async function stepGeneration() {
     isPaused = true;
     currentDigitIndex = 0;
     counts = new Array(currentBase).fill(0);
+    leadTime = new Array(currentBase).fill(0);
     timeSeriesData = [];
-    spiralDigits = [];
     if (spiralCtx) {
       clearSpiral();
     }
@@ -1254,6 +1363,9 @@ async function stepGeneration() {
     counts[digit]++;
     currentDigitIndex++;
     
+    // Track lead time
+    updateLeadTime();
+    
     // Update spiral visualization
     updateSpiral();
     
@@ -1263,6 +1375,7 @@ async function stepGeneration() {
     document.getElementById('processedCount').textContent = currentDigitIndex;
     
     updateChart();
+    updateLeadTimeChart();
     updateStatistics();
     
     if (currentDigitIndex >= digits) {
@@ -1276,6 +1389,7 @@ function reset() {
   isPaused = false;
   currentDigitIndex = 0;
   counts = new Array(currentBase).fill(0);
+  leadTime = new Array(currentBase).fill(0);
   submittedGuess = null;
   timeSeriesData = [];
   if (spiralCtx) {
@@ -1316,20 +1430,58 @@ function submitGuess() {
     return;
   }
   
-  submittedGuess = guessDigit;
-  document.getElementById('guessResult').textContent = `You guessed: ${digitLabels[guessDigit]}`;
+  // Get bet type
+  const betType = document.querySelector('input[name="betType"]:checked').value;
+  
+  submittedGuess = {
+    digit: guessDigit,
+    betType: betType
+  };
+  
+  const betTypeText = betType === 'tally' ? 'Most Tallies' : 'Most Lead Time';
+  document.getElementById('guessResult').textContent = `You guessed: ${digitLabels[guessDigit]} (${betTypeText})`;
 }
 
 function checkGuess() {
-  const maxCount = Math.max(...counts);
-  const winners = counts.map((c, i) => c === maxCount ? i : -1).filter(i => i >= 0);
+  if (!submittedGuess) return;
   
-  if (winners.includes(submittedGuess)) {
+  const guessedDigit = submittedGuess.digit;
+  const betType = submittedGuess.betType;
+  
+  // Determine winners based on bet type
+  let winners = [];
+  let winnerType = '';
+  
+  if (betType === 'tally') {
+    // Check final tally
+    const maxCount = Math.max(...counts);
+    winners = counts.map((c, i) => c === maxCount ? i : -1).filter(i => i >= 0);
+    winnerType = 'Tally Champion';
+  } else {
+    // Check lead time
+    const maxLeadTime = Math.max(...leadTime);
+    winners = leadTime.map((lt, i) => lt === maxLeadTime ? i : -1).filter(i => i >= 0);
+    winnerType = 'Lead Time Champion';
+  }
+  
+  // Check if guess is correct
+  if (winners.includes(guessedDigit)) {
     document.getElementById('guessResult').textContent += ' - Correct! 🎉';
   } else {
     const winnerLabels = winners.map(i => digitLabels[i]).join(', ');
-    document.getElementById('guessResult').textContent += ` - Wrong. Winner(s): ${winnerLabels}`;
+    document.getElementById('guessResult').textContent += ` - Wrong. ${winnerType}: ${winnerLabels}`;
   }
+  
+  // Show both champions for educational value
+  const tallyMax = Math.max(...counts);
+  const tallyChampions = counts.map((c, i) => c === tallyMax ? i : -1).filter(i => i >= 0);
+  const leadTimeMax = Math.max(...leadTime);
+  const leadTimeChampions = leadTime.map((lt, i) => lt === leadTimeMax ? i : -1).filter(i => i >= 0);
+  
+  const tallyLabels = tallyChampions.map(i => `${digitLabels[i]} (${counts[i]})`).join(', ');
+  const leadTimeLabels = leadTimeChampions.map(i => `${digitLabels[i]} (${leadTime[i]} iterations)`).join(', ');
+  
+  document.getElementById('guessResult').innerHTML += `<br><br><strong>Final Results:</strong><br>✅ Tally Champion: ${tallyLabels}<br>👑 Lead Time Champion: ${leadTimeLabels}`;
 }
 
 function toggleGuessSection() {

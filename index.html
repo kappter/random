@@ -120,9 +120,24 @@
 
         <!-- Guess Section -->
         <div id="guessSection" class="guess-section">
-            <h3>Guess Which Digit Will Have the Most Instances</h3>
-            <input type="text" id="guess" placeholder="Enter digit (e.g., 0-9, A, B)" maxlength="1">
-            <button id="submitGuess" onclick="submitGuess()">Submit Guess</button>
+            <h3>Guess Which Digit Will Win</h3>
+            <div class="bet-type-selection">
+                <label class="bet-type-label">Betting on:</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="betType" value="tally" checked>
+                        <span>Most Tallies (Final Count)</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="betType" value="leadTime">
+                        <span>Most Lead Time (Iterations in Lead)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="guess-input-group">
+                <input type="text" id="guess" placeholder="Enter digit (e.g., 0-9, A, B)" maxlength="1">
+                <button id="submitGuess" onclick="submitGuess()">Submit Guess</button>
+            </div>
             <button onclick="toggleGuessSection()">Hide Guess Section</button>
             <p id="guessResult"></p>
         </div>
@@ -142,6 +157,7 @@
         <div class="view-toggle">
             <button id="timeSeriesBtn" class="toggle-btn active" onclick="showTimeSeriesView()">📈 Time Series</button>
             <button id="spiralBtn" class="toggle-btn" onclick="showSpiralView()">🌀 Spiral</button>
+            <button id="leadTimeBtn" class="toggle-btn" onclick="showLeadTimeView()">👑 Lead Time</button>
         </div>
         
         <div class="chart-container" id="timeSeriesContainer">
@@ -150,6 +166,10 @@
         
         <div class="chart-container" id="spiralContainer" style="display:none;">
             <canvas id="spiralCanvas" width="800" height="800"></canvas>
+        </div>
+        
+        <div class="chart-container" id="leadTimeContainer" style="display:none;">
+            <canvas id="leadTimeChart"></canvas>
         </div>
 
         <!-- Results -->
