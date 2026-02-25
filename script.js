@@ -1308,10 +1308,20 @@ function showSummary() {
   const summaryDiv = document.getElementById('summaryReport');
   let html = '<h3>Summary Report</h3>';
   
-  counts.forEach((count, digit) => {
-    const tallies = Math.floor(count / 5);
-    const label = digitLabels[digit];
-    html += `<p>Digit ${label}: ${tallies} tallies (Count: ${count})</p>`;
+  // Create array of digit data for sorting
+  const digitData = counts.map((count, digit) => ({
+    digit: digit,
+    label: digitLabels[digit],
+    count: count,
+    leadTime: leadTime[digit]
+  }));
+  
+  // Sort by count descending (winner on top)
+  digitData.sort((a, b) => b.count - a.count);
+  
+  // Generate sorted summary
+  digitData.forEach(data => {
+    html += `<p>Digit ${data.label}: ${data.count} occurrences | ${data.leadTime} iterations in lead</p>`;
   });
   
   summaryDiv.innerHTML = html;
