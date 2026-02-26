@@ -1325,6 +1325,160 @@ function showSummary() {
   });
   
   summaryDiv.innerHTML = html;
+  
+  // Generate detailed analysis report
+  showDetailedAnalysis();
+}
+
+function showDetailedAnalysis() {
+  const analysisDiv = document.getElementById('detailedAnalysis');
+  if (!analysisDiv) return;
+  
+  // Create array of digit data
+  const digitData = counts.map((count, digit) => ({
+    digit: digit,
+    label: digitLabels[digit],
+    count: count,
+    leadTime: leadTime[digit]
+  }));
+  
+  // Find champions
+  const countWinner = digitData.reduce((max, d) => d.count > max.count ? d : max);
+  const leadTimeWinner = digitData.reduce((max, d) => d.leadTime > max.leadTime ? d : max);
+  
+  // Calculate statistics
+  const totalIterations = digitData.reduce((sum, d) => sum + d.count, 0);
+  const totalLeadIterations = digitData.reduce((sum, d) => sum + d.leadTime, 0);
+  const leadDominance = ((leadTimeWinner.leadTime / totalIterations) * 100).toFixed(1);
+  const countDominance = ((countWinner.count / totalIterations) * 100).toFixed(1);
+  
+  // Detect anomaly
+  const isAnomaly = countWinner.digit !== leadTimeWinner.digit;
+  
+  // Sort for runner-up analysis
+  const sortedByCount = [...digitData].sort((a, b) => b.count - a.count);
+  const countRunnerUp = sortedByCount[1];
+  const countGap = countWinner.count - countRunnerUp.count;
+  const gapPercentage = ((countGap / countWinner.count) * 100).toFixed(1);
+  
+  // Classify anomaly types
+  let anomalyType = '';
+  let anomalyDescription = '';
+  
+  if (isAnomaly) {
+    const leadWinnerCountRank = sortedByCount.findIndex(d => d.digit === leadTimeWinner.digit) + 1;
+    const countWinnerLeadPct = (countWinner.leadTime / totalIterations) * 100;
+    
+    if (countWinner.leadTime === 0) {
+      anomalyType = '"The Ghost" 👻';
+      anomalyDescription = `Digit ${countWinner.label} won final count (${countWinner.count}) but NEVER led at any point during generation!`;
+    } else if (countWinnerLeadPct < 20) {
+      anomalyType = '"The Late Surge" 🚀';
+      anomalyDescription = `Digit ${countWinner.label} won final count (${countWinner.count}) despite leading for only ${countWinner.leadTime} iterations (${countWinnerLeadPct.toFixed(1)}%).`;
+    }
+    
+    if (leadDominance > 50 && leadWinnerCountRank > 1) {
+      anomalyType += (anomalyType ? ' vs ' : '') + '"The Marathon Leader" 🏃';
+      anomalyDescription += ` Meanwhile, Digit ${leadTimeWinner.label} led for ${leadTimeWinner.leadTime} iterations (${leadDominance}% dominance) but finished in ${leadWinnerCountRank}${getOrdinalSuffix(leadWinnerCountRank)} place with only ${leadTimeWinner.count} occurrences.`;
+    }
+  } else {
+    anomalyType = '"The Consistent Performer" 🏆';
+    anomalyDescription = `Digit ${countWinner.label} won both final count (${countWinner.count}) and lead time (${leadTimeWinner.leadTime} iterations, ${leadDominance}% dominance), showing true dominance throughout.`;
+  }
+  
+  // Find "ghosts" - high count but never led
+  const ghosts = digitData.filter(d => d.count >= sortedByCount[2].count && d.leadTime === 0);
+  
+  // Build HTML
+  let html = '<h3>📊 Detailed Analysis</h3>';
+  
+  // Champions section
+  html += '<div class="analysis-section">';
+  html += '<h4>Champions</h4>';
+  html += `<p class="champion-line"><span class="badge badge-gold">🏆 FINAL COUNT</span> Digit ${countWinner.label}: <strong>${countWinner.count} occurrences</strong> (${countDominance}% of total)</p>`;
+  html += `<p class="champion-line"><span class="badge badge-purple">👑 LEAD TIME</span> Digit ${leadTimeWinner.label}: <strong>${leadTimeWinner.leadTime} iterations</strong> (${leadDominance}% dominance)</p>`;
+  html += '</div>';
+  
+  // Anomaly detection
+  if (isAnomaly) {
+    html += '<div class="analysis-section anomaly-alert">';
+    html += '<h4>🚨 ANOMALY DETECTED</h4>';
+    html += `<p class="anomaly-type"><strong>${anomalyType}</strong></p>`;
+    html += `<p>${anomalyDescription}</p>`;
+    html += '</div>';
+  } else {
+    html += '<div class="analysis-section">';
+    html += '<h4>✅ No Anomaly</h4>';
+    html += `<p>${anomalyDescription}</p>`;
+    html += '</div>';
+  }
+  
+  // Statistical insights
+  html += '<div class="analysis-section">';
+  html += '<h4>Statistical Insights</h4>';
+  html += '<div class="stats-grid">';
+  html += `<div class="stat-item"><strong>Total Iterations:</strong> ${totalIterations}</div>`;
+  html += `<div class="stat-item"><strong>Total Lead Time:</strong> ${totalLeadIterations} ${totalLeadIterations > totalIterations ? '(ties occurred)' : ''}</div>`;
+  html += `<div class="stat-item"><strong>Count Gap:</strong> ${countGap} occurrences (${gapPercentage}% difference)</div>`;
+  html += `<div class="stat-item"><strong>Lead Dominance:</strong> ${leadDominance}% by Digit ${leadTimeWinner.label}</div>`;
+  html += '</div>';
+  html += '</div>';
+  
+  // Notable findings
+  html += '<div class="analysis-section">';
+  html += '<h4>💡 Notable Findings</h4>';
+  html += '<ul class="findings-list">';
+  
+  if (isAnomaly) {
+    html += `<li>Different winners for final count (Digit ${countWinner.label}) vs lead time (Digit ${leadTimeWinner.label})</li>`;
+  }
+  
+  if (ghosts.length > 0) {
+    ghosts.forEach(g => {
+      html += `<li>Digit ${g.label}: ${g.count} occurrences but never led ("Ghost" accumulation)</li>`;
+    });
+  }
+  
+  if (totalLeadIterations > totalIterations) {
+    const tieCount = totalLeadIterations - totalIterations;
+    html += `<li>${tieCount} extra lead iterations due to ties (multiple digits tied for lead)</li>`;
+  }
+  
+  const highLeadLowCount = digitData.filter(d => (d.leadTime / totalIterations > 0.3) && (sortedByCount.findIndex(s => s.digit === d.digit) > 2));
+  if (highLeadLowCount.length > 0) {
+    highLeadLowCount.forEach(d => {
+      const rank = sortedByCount.findIndex(s => s.digit === d.digit) + 1;
+      html += `<li>Digit ${d.label}: Led for ${((d.leadTime / totalIterations) * 100).toFixed(1)}% but finished ${rank}${getOrdinalSuffix(rank)}</li>`;
+    });
+  }
+  
+  html += '</ul>';
+  html += '</div>';
+  
+  // Educational context
+  if (isAnomaly) {
+    html += '<div class="analysis-section educational">';
+    html += '<h4>🎓 Teaching Applications</h4>';
+    html += '<p>This result is ideal for teaching:</p>';
+    html += '<ul>';
+    html += '<li><strong>Statistical Variance:</strong> Early dominance doesn\'t guarantee final victory</li>';
+    html += '<li><strong>Regression to the Mean:</strong> Extreme early results tend to moderate over time</li>';
+    html += '<li><strong>Gambler\'s Fallacy:</strong> Past performance is not indicative of future results</li>';
+    html += '<li><strong>Leading vs Lagging Indicators:</strong> Instantaneous state ≠ final outcome</li>';
+    html += '</ul>';
+    html += '</div>';
+  }
+  
+  analysisDiv.innerHTML = html;
+}
+
+function getOrdinalSuffix(num) {
+  const j = num % 10;
+  const k = num % 100;
+  if (j === 1 && k !== 11) return 'st';
+  if (j === 2 && k !== 12) return 'nd';
+  if (j === 3 && k !== 13) return 'rd';
+  return 'th';
 }
 
 function pauseResume() {
