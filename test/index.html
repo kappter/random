@@ -66,6 +66,7 @@
             <label for="baseSystem">Number Base (2-16):</label>
             <input type="number" id="baseSystem" min="2" max="16" value="10">
             <button onclick="applyBase()">Apply Base</button>
+            <button onclick="randomizeSettings()" class="random-btn">🎲 Random</button>
             <span class="badge badge-info" id="baseInfo">Base 10 (Decimal)</span>
         </div>
 
@@ -131,6 +132,10 @@
                     <label class="radio-label">
                         <input type="radio" name="betType" value="leadTime">
                         <span>Most Lead Time (Iterations in Lead)</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="betType" value="ghost">
+                        <span>👻 Highest Ghost Score (Most Count, Never Led)</span>
                     </label>
                 </div>
             </div>
