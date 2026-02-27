@@ -1100,3 +1100,28 @@ body.dark-mode .educational {
 body.dark-mode .educational li {
   color: #b8d4b8;
 }
+
+/* Random Button Styles */
+.random-btn {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  color: white;
+  border: 2px solid #ff5252;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  margin-left: 10px;
+}
+
+.random-btn:hover {
+  background: linear-gradient(135deg, #ff5252 0%, #e74c3c 100%);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+}
+
+body.dark-mode .random-btn {
+  background: linear-gradient(135deg, #d4625c 0%, #c45248 100%);
+  border-color: #b84842;
+}
+
+body.dark-mode .random-btn:hover {
+  background: linear-gradient(135deg, #c45248 0%, #b84842 100%);
+}

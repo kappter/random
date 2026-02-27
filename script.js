@@ -1602,7 +1602,7 @@ function submitGuess() {
     betType: betType
   };
   
-  const betTypeText = betType === 'tally' ? 'Most Tallies' : 'Most Lead Time';
+  const betTypeText = betType === 'tally' ? 'Most Tallies' : (betType === 'leadTime' ? 'Most Lead Time' : 'Highest Ghost Score');
   document.getElementById('guessResult').textContent = `You guessed: ${digitLabels[guessDigit]} (${betTypeText})`;
 }
 
@@ -1621,11 +1621,22 @@ function checkGuess() {
     const maxCount = Math.max(...counts);
     winners = counts.map((c, i) => c === maxCount ? i : -1).filter(i => i >= 0);
     winnerType = 'Tally Champion';
-  } else {
+  } else if (betType === 'leadTime') {
     // Check lead time
     const maxLeadTime = Math.max(...leadTime);
     winners = leadTime.map((lt, i) => lt === maxLeadTime ? i : -1).filter(i => i >= 0);
     winnerType = 'Lead Time Champion';
+  } else {
+    // Check ghost score (highest count with 0 lead time)
+    const ghostScores = counts.map((c, i) => leadTime[i] === 0 ? c : 0);
+    const maxGhostScore = Math.max(...ghostScores);
+    if (maxGhostScore > 0) {
+      winners = ghostScores.map((gs, i) => gs === maxGhostScore ? i : -1).filter(i => i >= 0);
+      winnerType = 'Ghost Champion';
+    } else {
+      winners = [];
+      winnerType = 'No Ghost (all digits led at some point)';
+    }
   }
   
   // Check if guess is correct
@@ -1645,12 +1656,45 @@ function checkGuess() {
   const tallyLabels = tallyChampions.map(i => `${digitLabels[i]} (${counts[i]})`).join(', ');
   const leadTimeLabels = leadTimeChampions.map(i => `${digitLabels[i]} (${leadTime[i]} iterations)`).join(', ');
   
-  document.getElementById('guessResult').innerHTML += `<br><br><strong>Final Results:</strong><br>✅ Tally Champion: ${tallyLabels}<br>👑 Lead Time Champion: ${leadTimeLabels}`;
+  // Calculate ghost champion
+  const ghostScores = counts.map((c, i) => leadTime[i] === 0 ? c : 0);
+  const maxGhostScore = Math.max(...ghostScores);
+  let ghostResult = '';
+  if (maxGhostScore > 0) {
+    const ghostChampions = ghostScores.map((gs, i) => gs === maxGhostScore ? i : -1).filter(i => i >= 0);
+    const ghostLabels = ghostChampions.map(i => `${digitLabels[i]} (${counts[i]} count, 0 lead)`).join(', ');
+    ghostResult = `<br>👻 Ghost Champion: ${ghostLabels}`;
+  } else {
+    ghostResult = '<br>👻 No Ghost (all digits led at some point)';
+  }
+  
+  document.getElementById('guessResult').innerHTML += `<br><br><strong>Final Results:</strong><br>✅ Tally Champion: ${tallyLabels}<br>👑 Lead Time Champion: ${leadTimeLabels}${ghostResult}`;
 }
 
 function toggleGuessSection() {
   const section = document.getElementById('guessSection');
   section.style.display = section.style.display === 'none' ? 'block' : 'none';
+}
+
+function randomizeSettings() {
+  // Random base (2-16)
+  const randomBase = Math.floor(Math.random() * 15) + 2;
+  document.getElementById('baseSystem').value = randomBase;
+  
+  // Random digit count (500-1000)
+  const randomDigits = Math.floor(Math.random() * 501) + 500;
+  document.getElementById('digits').value = randomDigits;
+  
+  // Random algorithm
+  const algorithms = ['pi', 'gaussian', 'perlin', 'lcg', 'mersenne', 'logistic', 'middleSquare', 'xorshift', 'quantum', 'rule30', 'pcg', 'sobol', 'randu'];
+  const randomAlgorithm = algorithms[Math.floor(Math.random() * algorithms.length)];
+  document.getElementById('calcType').value = randomAlgorithm;
+  
+  // Apply the base to initialize
+  applyBase();
+  
+  // Show notification
+  alert(`🎲 Random Settings Applied!\n\nBase: ${randomBase}\nDigits: ${randomDigits}\nAlgorithm: ${document.getElementById('calcType').selectedOptions[0].text}\n\nReady to guess and calculate!`);
 }
 
 function copyDigits() {
