@@ -78,7 +78,7 @@
 
         <div class="control-group">
             <label for="calcType">Algorithm:</label>
-            <select id="calcType">
+            <select id="calcType" onchange="handleAlgorithmChange()">
                 <option value="pi">Pi Digits</option>
                 <option value="gaussian">Gaussian Distribution</option>
                 <option value="perlin">Perlin Noise</option>
@@ -89,15 +89,62 @@
                 <option value="xorshift">Xorshift</option>
                 <option value="quantum">Quantum Random (API)</option>
                 <option value="rule30">Cellular Automaton Rule 30</option>
+                <optgroup label="File Analysis">
+                    <option value="fileUpload">📂 Upload File (Byte Analysis)</option>
+                </optgroup>
             </select>
+        </div>
+
+        <!-- File Upload Zone (shown only when fileUpload algorithm is selected) -->
+        <div id="fileUploadZone" class="file-upload-zone" style="display:none;">
+            <div id="dropZone" class="drop-zone" ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                <div class="drop-zone-icon">📂</div>
+                <div class="drop-zone-text">Drag &amp; drop a file here</div>
+                <div class="drop-zone-subtext">or</div>
+                <label class="file-select-btn">
+                    Browse File
+                    <input type="file" id="fileInput" onchange="handleFileSelect(event)" style="display:none;">
+                </label>
+                <div class="drop-zone-limit">Max 2MB &bull; Any file type</div>
+            </div>
+            <!-- File Info Panel (shown after file is loaded) -->
+            <div id="fileInfoPanel" class="file-info-panel" style="display:none;">
+                <div class="file-info-header">
+                    <span class="file-icon" id="fileTypeIcon">📄</span>
+                    <div class="file-info-details">
+                        <div class="file-name" id="fileName">filename.txt</div>
+                        <div class="file-meta" id="fileMeta">0 KB &bull; text/plain</div>
+                    </div>
+                    <button class="file-clear-btn" onclick="clearUploadedFile()">✕ Clear</button>
+                </div>
+                <div class="file-entropy-grid">
+                    <div class="file-entropy-item">
+                        <div class="file-entropy-label">Total Bytes</div>
+                        <div class="file-entropy-value" id="fileTotalBytes">0</div>
+                    </div>
+                    <div class="file-entropy-item">
+                        <div class="file-entropy-label">Hex Digits Available</div>
+                        <div class="file-entropy-value" id="fileHexDigits">0</div>
+                    </div>
+                    <div class="file-entropy-item">
+                        <div class="file-entropy-label">Entropy Class</div>
+                        <div class="file-entropy-value" id="fileEntropyClass">—</div>
+                    </div>
+                    <div class="file-entropy-item">
+                        <div class="file-entropy-label">Unique Bytes</div>
+                        <div class="file-entropy-value" id="fileUniqueBytes">0</div>
+                    </div>
+                </div>
+                <div class="file-entropy-insight" id="fileEntropyInsight"></div>
+            </div>
         </div>
 
         <div class="control-group">
             <label for="updateFrequency">Update Frequency:</label>
             <select id="updateFrequency">
-                <option value="Every 1 digit">Every 1 digit</option>
+                <option value="Every 1 digit" selected>Every 1 digit</option>
                 <option value="Every 10 digits">Every 10 digits</option>
-                <option value="Every 50 digits" selected>Every 50 digits</option>
+                <option value="Every 50 digits">Every 50 digits</option>
                 <option value="Every 100 digits">Every 100 digits</option>
                 <option value="Every 500 digits">Every 500 digits</option>
             </select>
@@ -181,11 +228,88 @@
         <div class="results">
             <div id="summaryReport"></div>
             <div id="detailedAnalysis"></div>
+            <div id="printReportBtn" style="display:none; text-align:center; margin: 16px 0;">
+                <button onclick="printReport()" class="print-btn">🖨️ Print Report</button>
+            </div>
             <div class="digit-output">
                 <h3>Generated Digits:</h3>
                 <textarea id="digitSequence" readonly placeholder="Digits will appear here as they are generated..."></textarea>
                 <button onclick="copyDigits()">Copy Digits</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Printable Report (hidden until triggered) -->
+    <div id="printableReport" class="printable-report" style="display:none;">
+        <div class="print-header">
+            <div class="print-title-block">
+                <h1 class="print-title">Live Random Calculator</h1>
+                <p class="print-subtitle">Experiment Results Report</p>
+            </div>
+            <div class="print-meta">
+                <span id="printDate"></span>
+            </div>
+        </div>
+        <div class="print-run-info">
+            <table class="print-info-table">
+                <tr>
+                    <td><strong>Algorithm:</strong> <span id="printAlgorithm"></span></td>
+                    <td><strong>Base:</strong> <span id="printBase"></span></td>
+                    <td><strong>Digits Generated:</strong> <span id="printDigitCount"></span></td>
+                    <td><strong>Chi-Square:</strong> <span id="printChiSquare"></span></td>
+                </tr>
+            </table>
+        </div>
+        <div class="print-champions">
+            <h2 class="print-section-title">🏆 Champions</h2>
+            <div class="print-champions-grid">
+                <div class="print-champion-card tally-card">
+                    <div class="print-champion-icon">✅</div>
+                    <div class="print-champion-label">Final Count Winner</div>
+                    <div class="print-champion-value" id="printTallyChamp"></div>
+                </div>
+                <div class="print-champion-card lead-card">
+                    <div class="print-champion-icon">👑</div>
+                    <div class="print-champion-label">Lead Time Champion</div>
+                    <div class="print-champion-value" id="printLeadChamp"></div>
+                </div>
+                <div class="print-champion-card ghost-card">
+                    <div class="print-champion-icon">👻</div>
+                    <div class="print-champion-label">Ghost Champion</div>
+                    <div class="print-champion-value" id="printGhostChamp"></div>
+                </div>
+            </div>
+        </div>
+        <div id="printAnomalyBlock" class="print-anomaly" style="display:none;">
+            <h2 class="print-anomaly-title">🚨 Anomaly Detected</h2>
+            <p id="printAnomalyText"></p>
+        </div>
+        <div id="printGuessBlock" class="print-guess-block" style="display:none;">
+            <h2 class="print-section-title">🎯 Your Guess</h2>
+            <p id="printGuessText"></p>
+        </div>
+        <div class="print-stats">
+            <h2 class="print-section-title">📊 Full Statistics</h2>
+            <table class="print-stats-table">
+                <thead>
+                    <tr>
+                        <th>Digit</th>
+                        <th>Occurrences</th>
+                        <th>% of Total</th>
+                        <th>Lead Time (iters)</th>
+                        <th>Ghost Score</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="printStatsBody"></tbody>
+            </table>
+        </div>
+        <div class="print-narrative">
+            <h2 class="print-section-title">📝 Analysis</h2>
+            <p id="printNarrative"></p>
+        </div>
+        <div class="print-footer">
+            <p>Generated by Live Random Calculator &mdash; Educational Tool for Algorithm Analysis</p>
         </div>
     </div>
 
