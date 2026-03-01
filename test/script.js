@@ -207,6 +207,18 @@ const AlgorithmMetadata = {
     languageUsage: 'Mathematica (used by Stephen Wolfram in early versions), research contexts. Not widely adopted in mainstream programming languages.',
     compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     category: 'crypto'
+  },
+  fileUpload: {
+    name: 'File Byte Analysis',
+    type: 'Real Data',
+    distribution: 'File-Dependent',
+    description: 'Analyzes the byte distribution of an uploaded file. Each byte (0x00–0xFF) is treated as a hex value and converted to the selected base.',
+    basicInfo: 'Every file is a stream of bytes (0–255), naturally represented as base-16 (hex) values. By analyzing a file\'s byte distribution, you can reveal its "entropy fingerprint" — text files cluster around ASCII values, while encrypted files show near-uniform distribution.',
+    technicalInfo: 'Each byte is split into two hex nibbles (high and low), giving 2× the file size in hex digits. These are then converted to the target base using bit-packing with rejection sampling for uniform distribution. Shannon entropy is calculated to classify the file.',
+    useCases: 'File entropy analysis, detecting encryption/compression, understanding file formats, comparing randomness of real data vs PRNGs, cybersecurity education, forensics.',
+    languageUsage: 'Byte analysis is fundamental in Python (struct, bytes), Java (InputStream), C (fread), and all system programming languages. Shannon entropy is used in compression algorithms (ZIP, GZIP) and cryptography.',
+    compatibleBases: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+    category: 'file'
   }
 };
 
@@ -216,12 +228,16 @@ const CategoryNames = {
   modern: 'Modern PRNGs',
   mathematical: 'Mathematical/Chaotic',
   quasi: 'Quasi-Random',
-  crypto: 'Cryptographic/True Random'
+  crypto: 'Cryptographic/True Random',
+  file: 'File Analysis'
 };
 
 // Helper function to get current algorithm name
 function getAlgorithmName() {
   const calcType = document.getElementById('calcType').value;
+  if (calcType === 'fileUpload') {
+    return uploadedFileName ? `File: ${uploadedFileName}` : 'File Upload';
+  }
   return AlgorithmMetadata[calcType]?.name || 'Unknown';
 }
 
@@ -294,7 +310,7 @@ function updateAlgorithmCompatibility() {
   calcTypeSelect.innerHTML = '';
   
   // Group algorithms by category
-  const categories = ['classic', 'modern', 'mathematical', 'quasi', 'crypto'];
+  const categories = ['classic', 'modern', 'mathematical', 'quasi', 'crypto', 'file'];
   
   categories.forEach(category => {
     const algorithmsInCategory = Object.entries(AlgorithmMetadata)
@@ -1203,6 +1219,7 @@ function getGenerator(calcType, base) {
     case 'xorshift': return xorshiftGenerator(base);
     case 'quantum': return quantumGenerator(base);
     case 'rule30': return rule30Generator(base);
+    case 'fileUpload': return fileUploadGenerator(base);
     default: return lcgGenerator(base);
   }
 }
@@ -1210,12 +1227,18 @@ function getGenerator(calcType, base) {
 async function calculate() {
   if (isCalculating) return;
   
+  // Validate file upload
+  const calcType = document.getElementById('calcType').value;
+  if (calcType === 'fileUpload' && (!uploadedFileBytes || uploadedFileBytes.length === 0)) {
+    alert('Please upload a file first before calculating.');
+    return;
+  }
+  
   isCalculating = true;
   isPaused = false;
   document.getElementById('pauseBtn').textContent = 'Pause';
   
   const digits = parseInt(document.getElementById('digits').value);
-  const calcType = document.getElementById('calcType').value;
   const updateFreq = parseInt(document.getElementById('updateFrequency').value.split(' ')[1]);
   
   counts = new Array(currentBase).fill(0);
@@ -1302,6 +1325,9 @@ function finishCalculation() {
   if (submittedGuess !== null) {
     checkGuess();
   }
+  
+  // Show print report button
+  document.getElementById('printReportBtn').style.display = 'block';
 }
 
 function showSummary() {
@@ -1697,6 +1723,106 @@ function randomizeSettings() {
   alert(`🎲 Random Settings Applied!\n\nBase: ${randomBase}\nDigits: ${randomDigits}\nAlgorithm: ${document.getElementById('calcType').selectedOptions[0].text}\n\nReady to guess and calculate!`);
 }
 
+function printReport() {
+  const totalIterations = counts.reduce((s, c) => s + c, 0);
+  if (totalIterations === 0) { alert('No data to print yet. Please run a calculation first.'); return; }
+  
+  const algorithmName = getAlgorithmName();
+  const baseInfo = document.getElementById('baseInfo').textContent;
+  const chiSquare = document.getElementById('statChiSquare').textContent;
+  
+  // Date/time
+  document.getElementById('printDate').textContent = new Date().toLocaleString();
+  document.getElementById('printAlgorithm').textContent = algorithmName;
+  document.getElementById('printBase').textContent = baseInfo;
+  document.getElementById('printDigitCount').textContent = totalIterations;
+  document.getElementById('printChiSquare').textContent = chiSquare;
+  
+  // Build digit data
+  const digitData = counts.map((count, i) => ({
+    digit: i, label: digitLabels[i], count,
+    leadTime: leadTime[i],
+    ghostScore: leadTime[i] === 0 ? count : 0
+  }));
+  
+  const sortedByCount = [...digitData].sort((a, b) => b.count - a.count);
+  const countWinner = sortedByCount[0];
+  const leadWinner = digitData.reduce((mx, d) => d.leadTime > mx.leadTime ? d : mx);
+  const ghostScores = digitData.map(d => d.ghostScore);
+  const maxGhost = Math.max(...ghostScores);
+  const ghostWinners = maxGhost > 0 ? digitData.filter(d => d.ghostScore === maxGhost) : [];
+  
+  // Champions
+  document.getElementById('printTallyChamp').textContent =
+    `Digit ${countWinner.label}: ${countWinner.count} occurrences (${((countWinner.count/totalIterations)*100).toFixed(1)}%)`;
+  document.getElementById('printLeadChamp').textContent =
+    `Digit ${leadWinner.label}: ${leadWinner.leadTime} iterations (${((leadWinner.leadTime/totalIterations)*100).toFixed(1)}%)`;
+  document.getElementById('printGhostChamp').textContent =
+    ghostWinners.length > 0
+      ? ghostWinners.map(g => `Digit ${g.label}: ${g.count} (never led)`).join(', ')
+      : 'None — all digits led at some point';
+  
+  // Anomaly
+  const isAnomaly = countWinner.digit !== leadWinner.digit;
+  const anomalyBlock = document.getElementById('printAnomalyBlock');
+  if (isAnomaly) {
+    anomalyBlock.style.display = 'block';
+    const leadPct = ((leadWinner.leadTime / totalIterations) * 100).toFixed(1);
+    const rank = sortedByCount.findIndex(d => d.digit === leadWinner.digit) + 1;
+    document.getElementById('printAnomalyText').textContent =
+      `Digit ${countWinner.label} won the final count (${countWinner.count}) but Digit ${leadWinner.label} led for ${leadWinner.leadTime} iterations (${leadPct}% dominance), finishing ${rank}${getOrdinalSuffix(rank)} place. This is a classic example of early dominance failing to translate into final victory.`;
+  } else {
+    anomalyBlock.style.display = 'none';
+  }
+  
+  // Guess block
+  const guessBlock = document.getElementById('printGuessBlock');
+  const guessResultText = document.getElementById('guessResult').textContent;
+  if (guessResultText && guessResultText.trim() !== '') {
+    guessBlock.style.display = 'block';
+    document.getElementById('printGuessText').textContent = guessResultText;
+  } else {
+    guessBlock.style.display = 'none';
+  }
+  
+  // Stats table
+  const tbody = document.getElementById('printStatsBody');
+  tbody.innerHTML = '';
+  sortedByCount.forEach((d, idx) => {
+    const pct = ((d.count / totalIterations) * 100).toFixed(1);
+    const isCountWin = d.digit === countWinner.digit;
+    const isLeadWin  = d.digit === leadWinner.digit;
+    const isGhostWin = ghostWinners.some(g => g.digit === d.digit);
+    const rowClass = isCountWin ? 'winner-row' : (isLeadWin ? 'lead-row' : (isGhostWin ? 'ghost-row' : ''));
+    const notes = [];
+    if (isCountWin) notes.push('✅ Count Winner');
+    if (isLeadWin)  notes.push('👑 Lead Champion');
+    if (isGhostWin) notes.push('👻 Ghost Champion');
+    if (d.leadTime === 0 && d.count > 0) notes.push('Never led');
+    tbody.innerHTML += `<tr class="${rowClass}"><td>${d.label}</td><td>${d.count}</td><td>${pct}%</td><td>${d.leadTime}</td><td>${d.ghostScore > 0 ? d.ghostScore : '—'}</td><td>${notes.join(', ') || '—'}</td></tr>`;
+  });
+  
+  // Narrative
+  const totalLead = digitData.reduce((s, d) => s + d.leadTime, 0);
+  const tieNote = totalLead > totalIterations ? ` (${totalLead - totalIterations} extra iterations due to ties)` : '';
+  let narrative = `This experiment ran ${totalIterations} digits using the ${algorithmName} algorithm in ${baseInfo}. `;
+  if (isAnomaly) {
+    narrative += `A notable anomaly was detected: Digit ${countWinner.label} won the final count but Digit ${leadWinner.label} dominated the lead for most of the run. `;
+  } else {
+    narrative += `Digit ${countWinner.label} demonstrated consistent dominance, winning both the final count and the lead time championship. `;
+  }
+  if (ghostWinners.length > 0) {
+    narrative += `Ghost accumulation was observed: ${ghostWinners.map(g => `Digit ${g.label} (${g.count} occurrences, never led)`).join(', ')}. `;
+  }
+  narrative += `Total lead time across all digits: ${totalLead}${tieNote}. Chi-Square: ${chiSquare}.`;
+  document.getElementById('printNarrative').textContent = narrative;
+  
+  // Show the report and trigger print
+  const report = document.getElementById('printableReport');
+  report.style.display = 'block';
+  setTimeout(() => { window.print(); }, 300);
+}
+
 function copyDigits() {
   const textarea = document.getElementById('digitSequence');
   textarea.select();
@@ -1727,7 +1853,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAlgorithmInfo();
   initSpiralCanvas();
   
-  document.getElementById('calcType').addEventListener('change', updateAlgorithmInfo);
+  document.getElementById('calcType').addEventListener('change', handleAlgorithmChange);
   
   // Speed control slider
   const speedControl = document.getElementById('speedControl');
@@ -1765,3 +1891,253 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// ============= FILE UPLOAD FEATURE =============
+
+let uploadedFileBytes = null;  // Uint8Array of file bytes
+let uploadedFileName = '';
+let uploadedFileType = '';
+let uploadedFileSize = 0;
+
+// Show/hide file upload zone when algorithm changes
+function handleAlgorithmChange() {
+  const calcType = document.getElementById('calcType').value;
+  const fileUploadZone = document.getElementById('fileUploadZone');
+  
+  if (calcType === 'fileUpload') {
+    fileUploadZone.style.display = 'block';
+  } else {
+    fileUploadZone.style.display = 'none';
+  }
+  
+  updateAlgorithmInfo();
+}
+
+// Drag-and-drop handlers
+function handleDragOver(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  document.getElementById('dropZone').classList.add('drag-over');
+}
+
+function handleDragLeave(event) {
+  event.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+}
+
+function handleFileDrop(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  
+  const files = event.dataTransfer.files;
+  if (files.length > 0) {
+    processUploadedFile(files[0]);
+  }
+}
+
+function handleFileSelect(event) {
+  const files = event.target.files;
+  if (files.length > 0) {
+    processUploadedFile(files[0]);
+  }
+}
+
+function processUploadedFile(file) {
+  // 2MB cap
+  const MAX_SIZE = 2 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    alert(`File too large! Maximum size is 2MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`);
+    return;
+  }
+  
+  if (file.size === 0) {
+    alert('File is empty. Please choose a file with content.');
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    uploadedFileBytes = new Uint8Array(e.target.result);
+    uploadedFileName = file.name;
+    uploadedFileType = file.type || detectFileType(file.name);
+    uploadedFileSize = file.size;
+    
+    // Show file info panel
+    showFileInfoPanel();
+    
+    // Auto-set digit count to available hex digits (capped at 10000)
+    const availableHexDigits = uploadedFileBytes.length * 2;
+    const suggestedDigits = Math.min(availableHexDigits, 10000);
+    document.getElementById('digits').value = suggestedDigits;
+    
+    // Update chart titles to reflect the loaded file name
+    const algorithmLabel = `File: ${uploadedFileName}`;
+    const base = currentBase;
+    ['digitChart', 'timeSeriesChart', 'leadTimeChart'].forEach(id => {
+      const c = Chart.getChart(id);
+      if (c && c.options.plugins.title) {
+        const oldTitle = c.options.plugins.title.text || '';
+        // Replace the algorithm portion of the title
+        c.options.plugins.title.text = oldTitle.replace(/^(.*?) - .* \(Base/, `$1 - ${algorithmLabel} (Base`);
+        c.update();
+      }
+    });
+    // Spiral title will update on next draw via getAlgorithmName()
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function detectFileType(filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+  const typeMap = {
+    'txt': 'text/plain', 'html': 'text/html', 'css': 'text/css',
+    'js': 'text/javascript', 'json': 'application/json',
+    'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
+    'gif': 'image/gif', 'bmp': 'image/bmp', 'svg': 'image/svg+xml',
+    'pdf': 'application/pdf', 'zip': 'application/zip',
+    'mp3': 'audio/mpeg', 'mp4': 'video/mp4',
+    'exe': 'application/octet-stream', 'bin': 'application/octet-stream'
+  };
+  return typeMap[ext] || 'application/octet-stream';
+}
+
+function getFileTypeIcon(mimeType, filename) {
+  if (mimeType.startsWith('image/')) return '🖼️';
+  if (mimeType.startsWith('text/')) return '📄';
+  if (mimeType.startsWith('audio/')) return '🎵';
+  if (mimeType.startsWith('video/')) return '🎬';
+  if (mimeType === 'application/pdf') return '📕';
+  if (mimeType === 'application/zip' || filename.endsWith('.zip') || filename.endsWith('.gz')) return '🗜️';
+  if (mimeType === 'application/json') return '📋';
+  if (filename.endsWith('.exe') || filename.endsWith('.bin')) return '⚙️';
+  return '📂';
+}
+
+function classifyEntropy(bytes) {
+  // Count unique byte values
+  const freq = new Array(256).fill(0);
+  for (const b of bytes) freq[b]++;
+  const uniqueBytes = freq.filter(f => f > 0).length;
+  
+  // Calculate Shannon entropy (bits per byte)
+  let entropy = 0;
+  const n = bytes.length;
+  for (const f of freq) {
+    if (f > 0) {
+      const p = f / n;
+      entropy -= p * Math.log2(p);
+    }
+  }
+  
+  // Classify
+  if (entropy >= 7.5) return { label: 'Very High 🔥', insight: 'This file has near-maximum entropy — it looks like encrypted or compressed data. The byte distribution is extremely uniform, similar to a high-quality PRNG.', entropy };
+  if (entropy >= 6.5) return { label: 'High ⬆️', insight: 'High entropy suggests compressed, encrypted, or binary data. Bytes are fairly well distributed with no strong patterns.', entropy };
+  if (entropy >= 5.0) return { label: 'Medium ➡️', insight: 'Medium entropy is typical of executable files or mixed binary/text. Some byte values dominate but there is still variety.', entropy };
+  if (entropy >= 3.0) return { label: 'Low ⬇️', insight: 'Low entropy suggests structured text or data with repeating patterns. Certain byte values (like ASCII letters) appear far more often than others.', entropy };
+  return { label: 'Very Low ❄️', insight: 'Very low entropy means this file is highly repetitive or mostly zeros. The byte distribution is extremely non-uniform.', entropy };
+}
+
+function showFileInfoPanel() {
+  const panel = document.getElementById('fileInfoPanel');
+  const dropZone = document.getElementById('dropZone');
+  
+  // Update file info
+  document.getElementById('fileTypeIcon').textContent = getFileTypeIcon(uploadedFileType, uploadedFileName);
+  document.getElementById('fileName').textContent = uploadedFileName;
+  
+  const sizeKB = (uploadedFileSize / 1024).toFixed(1);
+  const sizeMB = (uploadedFileSize / 1024 / 1024).toFixed(2);
+  const sizeStr = uploadedFileSize > 1024 * 100 ? `${sizeMB} MB` : `${sizeKB} KB`;
+  document.getElementById('fileMeta').textContent = `${sizeStr} · ${uploadedFileType || 'unknown type'}`;
+  
+  // Entropy stats
+  const freq = new Array(256).fill(0);
+  for (const b of uploadedFileBytes) freq[b]++;
+  const uniqueBytes = freq.filter(f => f > 0).length;
+  const entropyInfo = classifyEntropy(uploadedFileBytes);
+  
+  document.getElementById('fileTotalBytes').textContent = uploadedFileBytes.length.toLocaleString();
+  document.getElementById('fileHexDigits').textContent = (uploadedFileBytes.length * 2).toLocaleString();
+  document.getElementById('fileEntropyClass').textContent = entropyInfo.label;
+  document.getElementById('fileUniqueBytes').textContent = `${uniqueBytes} / 256`;
+  document.getElementById('fileEntropyInsight').textContent = `Shannon Entropy: ${entropyInfo.entropy.toFixed(3)} bits/byte — ${entropyInfo.insight}`;
+  
+  // Show panel, hide drop zone
+  dropZone.style.display = 'none';
+  panel.style.display = 'block';
+}
+
+function clearUploadedFile() {
+  uploadedFileBytes = null;
+  uploadedFileName = '';
+  uploadedFileType = '';
+  uploadedFileSize = 0;
+  
+  // Reset file input
+  document.getElementById('fileInput').value = '';
+  
+  // Show drop zone, hide panel
+  document.getElementById('dropZone').style.display = 'flex';
+  document.getElementById('fileInfoPanel').style.display = 'none';
+}
+
+// File upload generator — reads bytes as hex digits, then converts to target base
+function* fileUploadGenerator(base) {
+  if (!uploadedFileBytes || uploadedFileBytes.length === 0) {
+    // Fallback if no file loaded
+    yield* lcgGenerator(base);
+    return;
+  }
+  
+  // Extract hex digits from bytes (each byte = 2 hex digits, high nibble then low nibble)
+  const hexDigits = [];
+  for (const byte of uploadedFileBytes) {
+    hexDigits.push((byte >> 4) & 0xF);  // High nibble (0-15)
+    hexDigits.push(byte & 0xF);          // Low nibble (0-15)
+  }
+  
+  if (base === 16) {
+    // Direct hex digit output
+    let i = 0;
+    while (true) {
+      yield hexDigits[i % hexDigits.length];
+      i++;
+    }
+  } else {
+    // Convert hex digit stream to target base
+    // Pack hex digits into a value and re-extract in target base
+    // Use a sliding window approach for efficient conversion
+    let buffer = 0;
+    let bufferBits = 0;
+    const bitsPerHex = 4;
+    const bitsNeeded = Math.ceil(Math.log2(base));
+    let hexIndex = 0;
+    
+    while (true) {
+      // Fill buffer with hex digits
+      while (bufferBits < bitsNeeded && hexIndex < hexDigits.length) {
+        buffer = (buffer << bitsPerHex) | hexDigits[hexIndex++];
+        bufferBits += bitsPerHex;
+      }
+      
+      // If we've consumed all bytes, wrap around
+      if (hexIndex >= hexDigits.length) {
+        hexIndex = 0;
+      }
+      
+      // Extract digit in target base using rejection sampling
+      if (bufferBits >= bitsNeeded) {
+        const maxVal = 1 << bitsNeeded;
+        const candidate = (buffer >> (bufferBits - bitsNeeded)) & (maxVal - 1);
+        bufferBits -= bitsNeeded;
+        buffer &= (1 << bufferBits) - 1;
+        
+        if (candidate < base) {
+          yield candidate;
+        }
+        // else: reject and try again (rejection sampling for uniform distribution)
+      }
+    }
+  }
+}

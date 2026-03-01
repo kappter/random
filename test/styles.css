@@ -1125,3 +1125,424 @@ body.dark-mode .random-btn {
 body.dark-mode .random-btn:hover {
   background: linear-gradient(135deg, #c45248 0%, #b84842 100%);
 }
+
+/* ============================================================
+   PRINT BUTTON
+   ============================================================ */
+.print-btn {
+    background: linear-gradient(135deg, #5a7a4a, #3d5c30);
+    color: #f5f0e8;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    transition: background 0.2s, transform 0.1s;
+}
+.print-btn:hover {
+    background: linear-gradient(135deg, #6b8f58, #4e6e3a);
+    transform: translateY(-1px);
+}
+body.dark-mode .print-btn {
+    background: linear-gradient(135deg, #6b8f58, #4e6e3a);
+    color: #f5f0e8;
+}
+
+/* ============================================================
+   PRINTABLE REPORT - SCREEN PREVIEW
+   ============================================================ */
+.printable-report {
+    font-family: 'Georgia', serif;
+    color: #1a1a1a;
+    background: #fff;
+    max-width: 900px;
+    margin: 24px auto;
+    padding: 32px 40px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+.print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 3px solid #4a6741;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+.print-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2a3d1e;
+    margin: 0 0 2px 0;
+    text-align: left;
+}
+.print-subtitle {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+    font-style: italic;
+}
+.print-meta {
+    font-size: 0.78rem;
+    color: #555;
+    text-align: right;
+}
+.print-info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    background: #f7f4ef;
+    border-radius: 6px;
+    overflow: hidden;
+}
+.print-info-table td {
+    padding: 7px 14px;
+    font-size: 0.83rem;
+    border-right: 1px solid #ddd;
+}
+.print-info-table td:last-child { border-right: none; }
+.print-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2a3d1e;
+    margin: 14px 0 8px 0;
+    border-bottom: 1px solid #c5d5b5;
+    padding-bottom: 4px;
+}
+.print-champions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.print-champion-card {
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: center;
+}
+.tally-card  { background: #e8f5e2; border: 1px solid #7ab86a; }
+.lead-card   { background: #fdf6e0; border: 1px solid #c9a93a; }
+.ghost-card  { background: #f0ecf8; border: 1px solid #9b87c4; }
+.print-champion-icon  { font-size: 1.4rem; }
+.print-champion-label { font-size: 0.72rem; color: #555; margin: 2px 0; font-style: italic; }
+.print-champion-value { font-size: 1rem; font-weight: 700; color: #1a1a1a; }
+.print-anomaly {
+    background: #fff4e0;
+    border-left: 5px solid #e07b00;
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
+}
+.print-anomaly-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #a05500;
+    margin: 0 0 4px 0;
+}
+.print-anomaly p { margin: 0; font-size: 0.83rem; color: #5a3a00; }
+.print-guess-block {
+    background: #e8f0ff;
+    border-left: 5px solid #4a6baf;
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
+}
+.print-guess-block p { margin: 0; font-size: 0.85rem; }
+.print-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-bottom: 14px;
+}
+.print-stats-table th {
+    background: #4a6741;
+    color: #fff;
+    padding: 6px 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+.print-stats-table td {
+    padding: 5px 10px;
+    text-align: center;
+    border-bottom: 1px solid #e0ddd8;
+}
+.print-stats-table tr:nth-child(even) td { background: #f7f4ef; }
+.print-stats-table .winner-row td { background: #e8f5e2 !important; font-weight: 700; }
+.print-stats-table .lead-row td   { background: #fdf6e0 !important; font-weight: 700; }
+.print-stats-table .ghost-row td  { background: #f0ecf8 !important; font-weight: 700; }
+.print-narrative p {
+    font-size: 0.84rem;
+    color: #333;
+    margin: 0;
+    line-height: 1.6;
+}
+.print-footer {
+    border-top: 1px solid #c5d5b5;
+    margin-top: 16px;
+    padding-top: 8px;
+    text-align: center;
+    font-size: 0.72rem;
+    color: #888;
+    font-style: italic;
+}
+
+/* ============================================================
+   @MEDIA PRINT - CLEAN PAPER OUTPUT
+   ============================================================ */
+@media print {
+    body > * { display: none !important; }
+    #printableReport {
+        display: block !important;
+        margin: 0 !important;
+        padding: 20px 28px !important;
+        border: none !important;
+        box-shadow: none !important;
+        max-width: 100% !important;
+        font-size: 0.82rem !important;
+    }
+    .print-title  { font-size: 1.3rem !important; }
+    .print-champions-grid { gap: 6px !important; }
+    .print-champion-card  { padding: 7px 10px !important; }
+    .print-stats-table th,
+    .print-stats-table td { padding: 4px 8px !important; }
+    @page {
+        margin: 15mm 15mm 15mm 15mm;
+        size: A4 portrait;
+    }
+}
+
+/* ============= FILE UPLOAD STYLES ============= */
+
+.file-upload-zone {
+  margin: 12px 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 20px;
+  border: 2px dashed #7c6f9a;
+  border-radius: 12px;
+  background: rgba(102, 126, 234, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.12);
+  transform: scale(1.01);
+}
+
+.drop-zone-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.drop-zone-text {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.drop-zone-subtext {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.drop-zone-limit {
+  font-size: 0.78rem;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+.file-select-btn {
+  display: inline-block;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.file-select-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* File Info Panel */
+.file-info-panel {
+  border: 1px solid #c5d5e5;
+  border-radius: 12px;
+  padding: 16px;
+  background: #f4f7ff;
+}
+
+.file-info-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.file-icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.file-info-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-meta {
+  font-size: 0.82rem;
+  color: #777;
+  margin-top: 2px;
+}
+
+.file-clear-btn {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  background: rgba(220, 50, 50, 0.1);
+  color: #c03030;
+  border: 1px solid rgba(220, 50, 50, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: all 0.2s ease;
+}
+
+.file-clear-btn:hover {
+  background: rgba(220, 50, 50, 0.2);
+}
+
+.file-entropy-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.file-entropy-item {
+  background: white;
+  border: 1px solid #dde5f5;
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.file-entropy-label {
+  font-size: 0.72rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.file-entropy-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #445;
+}
+
+.file-entropy-insight {
+  font-size: 0.83rem;
+  color: #556;
+  line-height: 1.5;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 8px;
+  border-left: 3px solid #667eea;
+}
+
+/* Dark mode overrides for file upload */
+body.dark-mode .drop-zone {
+  border-color: #6a5a78;
+  background: rgba(102, 78, 140, 0.1);
+}
+
+body.dark-mode .drop-zone:hover,
+body.dark-mode .drop-zone.drag-over {
+  border-color: #a89ac8;
+  background: rgba(102, 78, 140, 0.2);
+}
+
+body.dark-mode .drop-zone-text {
+  color: #d4c4e8;
+}
+
+body.dark-mode .drop-zone-subtext {
+  color: #9a8aaa;
+}
+
+body.dark-mode .drop-zone-limit {
+  color: #7a6a8a;
+}
+
+body.dark-mode .file-info-panel {
+  background: rgba(40, 32, 55, 0.7);
+  border-color: #6a5a78;
+}
+
+body.dark-mode .file-name {
+  color: #e8d8f8;
+}
+
+body.dark-mode .file-meta {
+  color: #9a8aaa;
+}
+
+body.dark-mode .file-entropy-item {
+  background: rgba(60, 50, 75, 0.6);
+  border-color: #6a5a78;
+}
+
+body.dark-mode .file-entropy-label {
+  color: #9a8aaa;
+}
+
+body.dark-mode .file-entropy-value {
+  color: #d4c4e8;
+}
+
+body.dark-mode .file-entropy-insight {
+  background: rgba(60, 50, 75, 0.4);
+  border-left-color: #a89ac8;
+  color: #c4b4d8;
+}
+
+/* Responsive: collapse entropy grid on small screens */
+@media (max-width: 600px) {
+  .file-entropy-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
