@@ -762,42 +762,235 @@ function updateTargetRotation(winnerIndex) {
 
 function updateSpiral() {
   drawRadialPolygon();
+  // Also update Ulam if it's visible
+  const ulamCont = document.getElementById('ulamContainer');
+  if (ulamCont && ulamCont.style.display !== 'none') {
+    renderUlamSpiral();
+  }
 }
 
 function clearSpiral() {
   currentRotation = 0;
   targetRotation = 0;
+  ulamDigitHistory = [];
   if (spiralCtx) {
     drawRadialPolygon();
   }
+  clearUlamCanvas();
+}
+
+// ─── Ulam Spiral Grid Visualization ─────────────────────────────────────────
+// Stores all generated digit values for the Ulam spiral grid
+let ulamDigitHistory = [];
+let ulamCanvas = null;
+let ulamCtx = null;
+
+// Full-spectrum color palette for Ulam spiral (up to 16 distinct colors)
+const ULAM_COLORS_LIGHT = [
+  '#e53935', // 0: Red
+  '#fb8c00', // 1: Orange
+  '#fdd835', // 2: Yellow
+  '#43a047', // 3: Green
+  '#00acc1', // 4: Cyan
+  '#1e88e5', // 5: Blue
+  '#8e24aa', // 6: Purple
+  '#f06292', // 7: Pink
+  '#6d4c41', // 8: Brown
+  '#546e7a', // 9: Blue-grey
+  '#00897b', // A: Teal
+  '#c0ca33', // B: Lime
+  '#ff7043', // C: Deep Orange
+  '#5c6bc0', // D: Indigo
+  '#26a69a', // E: Teal-green
+  '#ec407a', // F: Hot pink
+];
+const ULAM_COLORS_DARK = [
+  '#ef5350', // 0: Red
+  '#ffa726', // 1: Orange
+  '#ffee58', // 2: Yellow
+  '#66bb6a', // 3: Green
+  '#26c6da', // 4: Cyan
+  '#42a5f5', // 5: Blue
+  '#ab47bc', // 6: Purple
+  '#f48fb1', // 7: Pink
+  '#a1887f', // 8: Brown
+  '#78909c', // 9: Blue-grey
+  '#26a69a', // A: Teal
+  '#d4e157', // B: Lime
+  '#ff8a65', // C: Deep Orange
+  '#7986cb', // D: Indigo
+  '#4db6ac', // E: Teal-green
+  '#f06292', // F: Hot pink
+];
+
+function getUlamColors() {
+  return document.body.classList.contains('dark-mode') ? ULAM_COLORS_DARK : ULAM_COLORS_LIGHT;
+}
+
+function initUlamCanvas() {
+  ulamCanvas = document.getElementById('ulamCanvas');
+  if (!ulamCanvas) return;
+  ulamCtx = ulamCanvas.getContext('2d');
+  clearUlamCanvas();
+}
+
+function clearUlamCanvas() {
+  if (!ulamCtx || !ulamCanvas) return;
+  const isDark = document.body.classList.contains('dark-mode');
+  ulamCtx.fillStyle = isDark ? '#2a2520' : '#f8f9fa';
+  ulamCtx.fillRect(0, 0, ulamCanvas.width, ulamCanvas.height);
+}
+
+/**
+ * Generate spiral coordinates: returns array of [col, row] in spiral order
+ * starting from center, going right then spiraling outward.
+ */
+function generateSpiralCoords(n) {
+  const coords = [];
+  let x = 0, y = 0;
+  let dx = 1, dy = 0;
+  let stepCount = 0, steps = 1, turns = 0;
+  coords.push([0, 0]);
+  for (let i = 1; i < n; i++) {
+    x += dx; y += dy;
+    coords.push([x, y]);
+    stepCount++;
+    if (stepCount === steps) {
+      stepCount = 0;
+      // Turn left (rotate 90° counterclockwise: right→up→left→down→right)
+      const tmp = dx;
+      dx = -dy;
+      dy = tmp;
+      turns++;
+      if (turns % 2 === 0) steps++;
+    }
+  }
+  return coords;
+}
+
+function renderUlamSpiral() {
+  if (!ulamCtx || !ulamCanvas) return;
+  const n = ulamDigitHistory.length;
+  if (n === 0) {
+    clearUlamCanvas();
+    return;
+  }
+
+  const isDark = document.body.classList.contains('dark-mode');
+  const colors = getUlamColors();
+
+  // Determine cell size based on how many digits we have
+  const gridSide = Math.ceil(Math.sqrt(n)) + 2; // +2 for padding
+  const cellSize = Math.max(2, Math.floor(Math.min(ulamCanvas.width, ulamCanvas.height) / gridSide));
+  const actualGridW = Math.floor(ulamCanvas.width / cellSize);
+  const actualGridH = Math.floor(ulamCanvas.height / cellSize);
+  const offsetX = Math.floor(actualGridW / 2);
+  const offsetY = Math.floor(actualGridH / 2);
+
+  // Clear canvas
+  ulamCtx.fillStyle = isDark ? '#2a2520' : '#f8f9fa';
+  ulamCtx.fillRect(0, 0, ulamCanvas.width, ulamCanvas.height);
+
+  // Generate spiral coordinates
+  const coords = generateSpiralCoords(n);
+
+  // Draw each cell
+  for (let i = 0; i < n; i++) {
+    const [cx, cy] = coords[i];
+    const digit = ulamDigitHistory[i];
+    const px = (offsetX + cx) * cellSize;
+    const py = (offsetY + cy) * cellSize;
+
+    // Skip if out of canvas bounds
+    if (px < 0 || py < 0 || px + cellSize > ulamCanvas.width || py + cellSize > ulamCanvas.height) continue;
+
+    ulamCtx.fillStyle = colors[digit % colors.length];
+    ulamCtx.fillRect(px, py, cellSize - 1, cellSize - 1);
+  }
+
+  // Draw a small marker at center (first cell)
+  const centerPx = offsetX * cellSize;
+  const centerPy = offsetY * cellSize;
+  ulamCtx.strokeStyle = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)';
+  ulamCtx.lineWidth = Math.max(1, Math.floor(cellSize / 4));
+  ulamCtx.strokeRect(centerPx + 0.5, centerPy + 0.5, cellSize - 2, cellSize - 2);
+
+  // Update title
+  const titleEl = document.getElementById('ulamTitle');
+  if (titleEl) {
+    titleEl.textContent = `Ulam Spiral — ${getAlgorithmName()} (Base ${currentBase}) — ${n.toLocaleString()} cells`;
+  }
+
+  // Update stats
+  const statsEl = document.getElementById('ulamStats');
+  if (statsEl) {
+    const gridUsed = Math.ceil(Math.sqrt(n));
+    statsEl.textContent = `Grid: ${gridUsed}×${gridUsed} • Cell size: ${cellSize}px • Spiral from center outward`;
+  }
+
+  // Update legend
+  updateUlamLegend();
+}
+
+function updateUlamLegend() {
+  const legendEl = document.getElementById('ulamLegend');
+  if (!legendEl) return;
+  const colors = getUlamColors();
+  let html = '';
+  for (let i = 0; i < currentBase; i++) {
+    const label = digitLabels[i] || i.toString();
+    const color = colors[i % colors.length];
+    const count = counts[i] || 0;
+    const pct = currentDigitIndex > 0 ? ((count / currentDigitIndex) * 100).toFixed(1) : '0.0';
+    html += `<span class="ulam-legend-item"><span class="ulam-legend-swatch" style="background:${color}"></span>${label}: ${count} (${pct}%)</span>`;
+  }
+  legendEl.innerHTML = html;
 }
 
 // View toggle functions
 function showTimeSeriesView() {
   document.getElementById('timeSeriesContainer').style.display = 'block';
   document.getElementById('spiralContainer').style.display = 'none';
+  document.getElementById('ulamContainer').style.display = 'none';
   document.getElementById('leadTimeContainer').style.display = 'none';
   document.getElementById('timeSeriesBtn').classList.add('active');
   document.getElementById('spiralBtn').classList.remove('active');
+  document.getElementById('ulamBtn').classList.remove('active');
   document.getElementById('leadTimeBtn').classList.remove('active');
 }
 
 function showSpiralView() {
   document.getElementById('timeSeriesContainer').style.display = 'none';
   document.getElementById('spiralContainer').style.display = 'block';
+  document.getElementById('ulamContainer').style.display = 'none';
   document.getElementById('leadTimeContainer').style.display = 'none';
   document.getElementById('timeSeriesBtn').classList.remove('active');
   document.getElementById('spiralBtn').classList.add('active');
+  document.getElementById('ulamBtn').classList.remove('active');
   document.getElementById('leadTimeBtn').classList.remove('active');
   drawRadialPolygon(); // Redraw in case it needs updating
+}
+
+function showUlamView() {
+  document.getElementById('timeSeriesContainer').style.display = 'none';
+  document.getElementById('spiralContainer').style.display = 'none';
+  document.getElementById('ulamContainer').style.display = 'block';
+  document.getElementById('leadTimeContainer').style.display = 'none';
+  document.getElementById('timeSeriesBtn').classList.remove('active');
+  document.getElementById('spiralBtn').classList.remove('active');
+  document.getElementById('ulamBtn').classList.add('active');
+  document.getElementById('leadTimeBtn').classList.remove('active');
+  renderUlamSpiral(); // Render with current data
 }
 
 function showLeadTimeView() {
   document.getElementById('timeSeriesContainer').style.display = 'none';
   document.getElementById('spiralContainer').style.display = 'none';
+  document.getElementById('ulamContainer').style.display = 'none';
   document.getElementById('leadTimeContainer').style.display = 'block';
   document.getElementById('timeSeriesBtn').classList.remove('active');
   document.getElementById('spiralBtn').classList.remove('active');
+  document.getElementById('ulamBtn').classList.remove('active');
   document.getElementById('leadTimeBtn').classList.add('active');
 }
 
@@ -1269,6 +1462,7 @@ async function calculate() {
       const digit = result.value;
       counts[digit]++;
       currentDigitIndex++;
+      ulamDigitHistory.push(digit);
       
       // Track lead time
       updateLeadTime();
@@ -1552,6 +1746,7 @@ async function stepGeneration() {
     const digit = result.value;
     counts[digit]++;
     currentDigitIndex++;
+    ulamDigitHistory.push(digit);
     
     // Track lead time
     updateLeadTime();
@@ -1852,6 +2047,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeBase(10);
   updateAlgorithmInfo();
   initSpiralCanvas();
+  initUlamCanvas();
   
   document.getElementById('calcType').addEventListener('change', handleAlgorithmChange);
   
@@ -1888,6 +2084,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (spiralCanvas) {
       drawRadialPolygon();
+    }
+    // Redraw Ulam spiral with new color scheme
+    if (ulamDigitHistory.length > 0) {
+      renderUlamSpiral();
+    } else {
+      clearUlamCanvas();
     }
   });
 });
@@ -2038,6 +2240,215 @@ function classifyEntropy(bytes) {
   return { label: 'Very Low ❄️', insight: 'Very low entropy means this file is highly repetitive or mostly zeros. The byte distribution is extremely non-uniform.', entropy };
 }
 
+// ─── Benford's Law Analysis ───────────────────────────────────────────────
+
+// Expected Benford frequencies for leading digits 1-9
+const BENFORD_EXPECTED = {
+  1: 30.103, 2: 17.609, 3: 12.494, 4: 9.691,
+  5: 7.918,  6: 6.695,  7: 5.799, 8: 5.115, 9: 4.576
+};
+
+function analyzeBenford(bytes) {
+  // Count leading digits of each byte's decimal value (1-255; skip 0 as it has no leading digit)
+  const leadingCount = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
+  let total = 0;
+  for (const b of bytes) {
+    if (b === 0) continue; // 0 has no leading digit
+    const leading = parseInt(String(b)[0]);
+    if (leading >= 1 && leading <= 9) {
+      leadingCount[leading]++;
+      total++;
+    }
+  }
+  
+  if (total === 0) return null;
+  
+  // Calculate actual percentages
+  const actual = {};
+  for (let d = 1; d <= 9; d++) {
+    actual[d] = (leadingCount[d] / total) * 100;
+  }
+  
+  // Calculate Mean Absolute Deviation from Benford expectation
+  let mad = 0;
+  for (let d = 1; d <= 9; d++) {
+    mad += Math.abs(actual[d] - BENFORD_EXPECTED[d]);
+  }
+  mad /= 9;
+  
+  // Calculate chi-square statistic
+  let chiSquare = 0;
+  for (let d = 1; d <= 9; d++) {
+    const expected = (BENFORD_EXPECTED[d] / 100) * total;
+    const observed = leadingCount[d];
+    chiSquare += Math.pow(observed - expected, 2) / expected;
+  }
+  
+  // Conformance classification based on MAD
+  // (Nigrini's MAD thresholds for Benford conformance)
+  let conformance, conformanceClass, conformanceIcon;
+  if (mad <= 2.0) {
+    conformance = 'Close Conformance';
+    conformanceClass = 'benford-close';
+    conformanceIcon = '✅';
+  } else if (mad <= 4.0) {
+    conformance = 'Acceptable Conformance';
+    conformanceClass = 'benford-acceptable';
+    conformanceIcon = '🟡';
+  } else if (mad <= 6.0) {
+    conformance = 'Marginal Conformance';
+    conformanceClass = 'benford-marginal';
+    conformanceIcon = '🟠';
+  } else {
+    conformance = 'Non-Conformance';
+    conformanceClass = 'benford-nonconform';
+    conformanceIcon = '🔴';
+  }
+  
+  // Generate narrative
+  let narrative;
+  if (mad <= 2.0) {
+    narrative = `This file's byte leading digits closely follow Benford's Law (MAD: ${mad.toFixed(2)}%). This is typical of naturally occurring data such as text documents, spreadsheets, or log files. In forensic accounting, close conformance suggests authentic, unmanipulated data.`;
+  } else if (mad <= 4.0) {
+    narrative = `This file shows acceptable conformance to Benford's Law (MAD: ${mad.toFixed(2)}%). The leading digit distribution is reasonably close to the expected logarithmic pattern, which is common in mixed binary/text files or structured data formats.`;
+  } else if (mad <= 6.0) {
+    narrative = `This file shows marginal conformance to Benford's Law (MAD: ${mad.toFixed(2)}%). The leading digit distribution deviates noticeably from the expected pattern. This may indicate image data, audio samples, or data with constrained value ranges.`;
+  } else {
+    narrative = `This file does NOT conform to Benford's Law (MAD: ${mad.toFixed(2)}%). This is expected for encrypted files, compressed archives, or data with uniform distribution. In forensic contexts, non-conformance can indicate data manipulation or synthetic generation.`;
+  }
+  
+  return { actual, leadingCount, total, mad, chiSquare, conformance, conformanceClass, conformanceIcon, narrative };
+}
+
+let benfordChartInstance = null;
+
+function renderBenfordChart(benfordData) {
+  const canvas = document.getElementById('benfordChart');
+  if (!canvas) return;
+  
+  // Destroy existing chart
+  if (benfordChartInstance) {
+    benfordChartInstance.destroy();
+    benfordChartInstance = null;
+  }
+  
+  const labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const expectedData = labels.map(d => BENFORD_EXPECTED[parseInt(d)]);
+  const actualData = labels.map(d => benfordData.actual[parseInt(d)]);
+  
+  const isDark = document.body.classList.contains('dark-mode');
+  const textColor = isDark ? '#d4c5a9' : '#333';
+  const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+  
+  benfordChartInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Benford Expected %',
+          data: expectedData,
+          backgroundColor: 'rgba(255, 193, 7, 0.3)',
+          borderColor: 'rgba(255, 193, 7, 0.9)',
+          borderWidth: 2,
+          borderRadius: 3,
+          order: 2
+        },
+        {
+          label: 'Actual %',
+          data: actualData,
+          backgroundColor: actualData.map((v, i) => {
+            const diff = Math.abs(v - expectedData[i]);
+            if (diff <= 2) return 'rgba(76, 175, 80, 0.75)';
+            if (diff <= 5) return 'rgba(255, 152, 0, 0.75)';
+            return 'rgba(244, 67, 54, 0.75)';
+          }),
+          borderColor: actualData.map((v, i) => {
+            const diff = Math.abs(v - expectedData[i]);
+            if (diff <= 2) return 'rgba(76, 175, 80, 1)';
+            if (diff <= 5) return 'rgba(255, 152, 0, 1)';
+            return 'rgba(244, 67, 54, 1)';
+          }),
+          borderWidth: 2,
+          borderRadius: 3,
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: `Benford's Law — Leading Digit Distribution (${benfordData.total.toLocaleString()} bytes analyzed)`,
+          color: textColor,
+          font: { size: 13, weight: 'bold' }
+        },
+        legend: {
+          labels: { color: textColor, font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const val = ctx.parsed.y.toFixed(2);
+              const expected = expectedData[ctx.dataIndex].toFixed(2);
+              if (ctx.datasetIndex === 1) {
+                const diff = (ctx.parsed.y - expectedData[ctx.dataIndex]).toFixed(2);
+                const sign = diff >= 0 ? '+' : '';
+                return `Actual: ${val}% (${sign}${diff}% vs expected ${expected}%)`;
+              }
+              return `Expected: ${val}%`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Leading Digit', color: textColor },
+          ticks: { color: textColor },
+          grid: { color: gridColor }
+        },
+        y: {
+          title: { display: true, text: 'Frequency (%)', color: textColor },
+          ticks: { color: textColor, callback: v => v + '%' },
+          grid: { color: gridColor },
+          beginAtZero: true,
+          max: 40
+        }
+      }
+    }
+  });
+}
+
+function showBenfordPanel(benfordData) {
+  const panel = document.getElementById('benfordPanel');
+  if (!panel) return;
+  
+  if (!benfordData) {
+    panel.style.display = 'none';
+    return;
+  }
+  
+  // Update conformance badge
+  const badge = document.getElementById('benfordConformanceBadge');
+  badge.textContent = `${benfordData.conformanceIcon} ${benfordData.conformance}`;
+  badge.className = `benford-badge ${benfordData.conformanceClass}`;
+  
+  // Update stats
+  document.getElementById('benfordMAD').textContent = benfordData.mad.toFixed(2) + '%';
+  document.getElementById('benfordChiSq').textContent = benfordData.chiSquare.toFixed(2);
+  document.getElementById('benfordTotal').textContent = benfordData.total.toLocaleString();
+  
+  // Update narrative
+  document.getElementById('benfordNarrative').textContent = benfordData.narrative;
+  
+  // Render chart
+  renderBenfordChart(benfordData);
+  
+  panel.style.display = 'block';
+}
+
 function showFileInfoPanel() {
   const panel = document.getElementById('fileInfoPanel');
   const dropZone = document.getElementById('dropZone');
@@ -2063,6 +2474,10 @@ function showFileInfoPanel() {
   document.getElementById('fileUniqueBytes').textContent = `${uniqueBytes} / 256`;
   document.getElementById('fileEntropyInsight').textContent = `Shannon Entropy: ${entropyInfo.entropy.toFixed(3)} bits/byte — ${entropyInfo.insight}`;
   
+  // Run Benford's Law analysis and show panel
+  const benfordData = analyzeBenford(uploadedFileBytes);
+  showBenfordPanel(benfordData);
+  
   // Show panel, hide drop zone
   dropZone.style.display = 'none';
   panel.style.display = 'block';
@@ -2071,6 +2486,9 @@ function showFileInfoPanel() {
 function clearUploadedFile() {
   uploadedFileBytes = null;
   uploadedFileName = '';
+  // Hide Benford panel
+  const bp = document.getElementById('benfordPanel');
+  if (bp) bp.style.display = 'none';
   uploadedFileType = '';
   uploadedFileSize = 0;
   

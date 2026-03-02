@@ -139,6 +139,59 @@
             </div>
         </div>
 
+        <!-- Benford's Law Analysis Panel -->
+        <div id="benfordPanel" class="benford-panel" style="display:none;">
+
+            <!-- Educational Explainer -->
+            <div class="benford-explainer">
+                <div class="benford-explainer-header">
+                    <span class="benford-icon">📐</span>
+                    <div>
+                        <h3 class="benford-title">Benford's Law Analysis</h3>
+                        <p class="benford-subtitle">Also known as the First-Digit Law</p>
+                    </div>
+                    <div id="benfordConformanceBadge" class="benford-badge">Analyzing...</div>
+                </div>
+                <div class="benford-explainer-body">
+                    <p>In 1938, physicist Frank Benford discovered that in many naturally occurring datasets — from river lengths to population figures to financial transactions — the leading digit is <strong>not uniformly distributed</strong>. Instead, smaller digits appear far more often: <strong>digit 1 leads ~30% of the time</strong>, digit 2 about 17.6%, and so on down to digit 9 at just 4.6%.</p>
+                    <p>This follows a precise logarithmic law: <code>P(d) = log₁₀(1 + 1/d)</code>. The law applies to data that spans several orders of magnitude and arises naturally from multiplicative processes. It is widely used in <strong>forensic accounting</strong> to detect fraud — fabricated numbers tend to deviate from Benford's distribution because humans unconsciously over-use certain digits.</p>
+                    <p>For file byte analysis, bytes that represent natural data (text, measurements, prices) may conform, while encrypted or compressed files — which are designed to be uniform — will <strong>not</strong> conform. This makes Benford conformance a useful proxy for file entropy and authenticity.</p>
+                </div>
+                <div class="benford-stats-grid">
+                    <div class="benford-stat">
+                        <div class="benford-stat-label">Mean Absolute Deviation</div>
+                        <div class="benford-stat-value" id="benfordMAD">—</div>
+                        <div class="benford-stat-hint">&lt;2% = Close &nbsp;|&nbsp; &lt;4% = Acceptable</div>
+                    </div>
+                    <div class="benford-stat">
+                        <div class="benford-stat-label">Chi-Square Statistic</div>
+                        <div class="benford-stat-value" id="benfordChiSq">—</div>
+                        <div class="benford-stat-hint">df=8, critical=15.5 (p=0.05)</div>
+                    </div>
+                    <div class="benford-stat">
+                        <div class="benford-stat-label">Non-Zero Bytes Analyzed</div>
+                        <div class="benford-stat-value" id="benfordTotal">—</div>
+                        <div class="benford-stat-hint">Zero bytes excluded (no leading digit)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Benford Chart -->
+            <div class="benford-chart-container">
+                <canvas id="benfordChart" height="260"></canvas>
+            </div>
+
+            <!-- Color legend -->
+            <div class="benford-legend">
+                <span class="benford-legend-item benford-legend-close">● Within 2% of expected</span>
+                <span class="benford-legend-item benford-legend-warn">● 2–5% deviation</span>
+                <span class="benford-legend-item benford-legend-bad">● &gt;5% deviation</span>
+            </div>
+
+            <!-- Narrative -->
+            <div class="benford-narrative" id="benfordNarrative"></div>
+        </div>
+
         <div class="control-group">
             <label for="updateFrequency">Update Frequency:</label>
             <select id="updateFrequency">
@@ -208,7 +261,8 @@
         <!-- View Toggle -->
         <div class="view-toggle">
             <button id="timeSeriesBtn" class="toggle-btn active" onclick="showTimeSeriesView()">📈 Time Series</button>
-            <button id="spiralBtn" class="toggle-btn" onclick="showSpiralView()">🌀 Spiral</button>
+            <button id="spiralBtn" class="toggle-btn" onclick="showSpiralView()">🎯 Radial</button>
+            <button id="ulamBtn" class="toggle-btn" onclick="showUlamView()">🌀 Ulam Spiral</button>
             <button id="leadTimeBtn" class="toggle-btn" onclick="showLeadTimeView()">👑 Lead Time</button>
         </div>
         
@@ -218,6 +272,36 @@
         
         <div class="chart-container" id="spiralContainer" style="display:none;">
             <canvas id="spiralCanvas" width="800" height="800"></canvas>
+        </div>
+
+        <!-- Ulam Spiral Grid Visualization -->
+        <div class="chart-container ulam-container" id="ulamContainer" style="display:none;">
+            <div class="ulam-header">
+                <h3 class="ulam-title" id="ulamTitle">Ulam Spiral — Digit Grid</h3>
+                <p class="ulam-subtitle">Each cell = one generated digit, placed in a spiral from center outward. Colors reveal patterns in the sequence.</p>
+            </div>
+
+            <!-- Educational Explainer -->
+            <div class="ulam-explainer">
+                <div class="ulam-explainer-header">
+                    <span class="ulam-explainer-icon">🌀</span>
+                    <div>
+                        <h4 class="ulam-explainer-title">What is the Ulam Spiral?</h4>
+                        <p class="ulam-explainer-sub">A visual fingerprint of any digit sequence</p>
+                    </div>
+                </div>
+                <div class="ulam-explainer-body">
+                    <p>The <strong>Ulam Spiral</strong> was invented by mathematician Stanislaw Ulam in 1963 while doodling during a boring conference. He arranged integers in a spiral and noticed that <strong>prime numbers cluster along diagonal lines</strong> — a pattern that still lacks a complete mathematical explanation.</p>
+                    <p>Here, we adapt the concept as a <strong>digit sequence visualizer</strong>: each generated digit is placed as a colored cell in a square grid, filling from the center outward in a clockwise spiral. The result is a unique <em>visual fingerprint</em> of the algorithm. A <strong>truly random sequence</strong> produces a uniformly mixed mosaic with no visible structure. <strong>Biased or patterned sequences</strong> reveal themselves as color clusters, stripes, or diagonal bands.</p>
+                    <p>The <strong>center cell</strong> (marked with a border) is always the very first digit generated. Each ring outward represents the next layer of the spiral. With enough digits, you can visually compare whether different algorithms produce genuinely different-looking patterns — or suspiciously similar ones.</p>
+                </div>
+            </div>
+
+            <div class="ulam-canvas-wrap">
+                <canvas id="ulamCanvas" width="600" height="600"></canvas>
+            </div>
+            <div class="ulam-legend" id="ulamLegend"></div>
+            <div class="ulam-stats" id="ulamStats"></div>
         </div>
         
         <div class="chart-container" id="leadTimeContainer" style="display:none;">
