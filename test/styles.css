@@ -1546,3 +1546,169 @@ body.dark-mode .file-entropy-insight {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Benford Law Panel */
+.benford-panel { background:#fff; border:1px solid #e0d8cc; border-radius:10px; padding:20px; margin:12px 0; }
+.benford-explainer-header { display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
+.benford-icon { font-size:2rem; line-height:1; }
+.benford-title { margin:0 0 2px 0; font-size:1.1rem; font-weight:700; color:#2c2c2c; }
+.benford-subtitle { margin:0; font-size:0.82rem; color:#888; }
+.benford-badge { margin-left:auto; padding:5px 12px; border-radius:20px; font-size:0.82rem; font-weight:700; white-space:nowrap; flex-shrink:0; }
+.benford-close      { background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
+.benford-acceptable { background:#fff9c4; color:#f57f17; border:1px solid #ffe082; }
+.benford-marginal   { background:#fff3e0; color:#e65100; border:1px solid #ffcc80; }
+.benford-nonconform { background:#ffebee; color:#c62828; border:1px solid #ef9a9a; }
+.benford-explainer-body { font-size:0.88rem; line-height:1.65; color:#444; margin-bottom:14px; }
+.benford-explainer-body p { margin:0 0 8px 0; }
+.benford-explainer-body code { background:#f0ede8; padding:1px 5px; border-radius:3px; font-family:monospace; font-size:0.9em; color:#5d4037; }
+.benford-stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:10px; }
+.benford-stat { background:#f7f4ef; border:1px solid #e0d8cc; border-radius:8px; padding:10px 12px; text-align:center; }
+.benford-stat-label { font-size:0.75rem; color:#888; margin-bottom:4px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; }
+.benford-stat-value { font-size:1.3rem; font-weight:700; color:#3e2723; }
+.benford-stat-hint  { font-size:0.7rem; color:#aaa; margin-top:3px; }
+.benford-chart-container { position:relative; height:260px; margin:16px 0 8px 0; }
+.benford-legend { display:flex; gap:16px; justify-content:center; font-size:0.8rem; color:#666; margin-bottom:12px; flex-wrap:wrap; }
+.benford-legend-item { display:flex; align-items:center; gap:4px; }
+.benford-legend-close { color:#388e3c; }
+.benford-legend-warn  { color:#f57c00; }
+.benford-legend-bad   { color:#d32f2f; }
+.benford-narrative { background:#f7f4ef; border-left:4px solid #8d6e63; border-radius:0 6px 6px 0; padding:12px 16px; font-size:0.88rem; line-height:1.6; color:#444; }
+.dark-mode .benford-panel       { background:#2e2a25; border-color:#4a3f35; }
+.dark-mode .benford-title       { color:#d4c5a9; }
+.dark-mode .benford-subtitle    { color:#8a7a6a; }
+.dark-mode .benford-explainer-body { color:#b8a898; }
+.dark-mode .benford-explainer-body code { background:#3d3530; color:#c8a97a; }
+.dark-mode .benford-stat        { background:#3d3530; border-color:#5a4a3f; }
+.dark-mode .benford-stat-label  { color:#8a7a6a; }
+.dark-mode .benford-stat-value  { color:#d4c5a9; }
+.dark-mode .benford-stat-hint   { color:#6a5a50; }
+.dark-mode .benford-legend      { color:#8a7a6a; }
+.dark-mode .benford-narrative   { background:#3d3530; border-left-color:#8d6e63; color:#b8a898; }
+.dark-mode .benford-close       { background:#1b3a1e; color:#81c784; border-color:#388e3c; }
+.dark-mode .benford-acceptable  { background:#3a2e00; color:#ffd54f; border-color:#f9a825; }
+.dark-mode .benford-marginal    { background:#3a1e00; color:#ffb74d; border-color:#e65100; }
+.dark-mode .benford-nonconform  { background:#3a0a0a; color:#ef9a9a; border-color:#c62828; }
+@media (max-width:600px) { .benford-stats-grid { grid-template-columns:1fr 1fr; } .benford-explainer-header { flex-wrap:wrap; } .benford-badge { margin-left:0; } }
+
+/* ─── Ulam Spiral Visualization ─────────────────────────────────────────── */
+.ulam-container {
+    padding: 20px;
+}
+.ulam-header {
+    text-align: center;
+    margin-bottom: 14px;
+}
+.ulam-title {
+    margin: 0 0 4px 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #2c2c2c;
+}
+.ulam-subtitle {
+    margin: 0;
+    font-size: 0.84rem;
+    color: #666;
+    line-height: 1.5;
+}
+.ulam-canvas-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+    overflow: auto;
+}
+#ulamCanvas {
+    display: block;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: crosshair;
+}
+.ulam-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    justify-content: center;
+    margin: 12px 0 8px 0;
+    padding: 10px 14px;
+    background: #f7f4ef;
+    border-radius: 8px;
+    font-size: 0.82rem;
+}
+.ulam-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+    color: #444;
+}
+.ulam-legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,0.2);
+    flex-shrink: 0;
+}
+.ulam-stats {
+    text-align: center;
+    font-size: 0.82rem;
+    color: #888;
+    margin-top: 6px;
+    font-style: italic;
+}
+/* Dark mode */
+body.dark-mode .ulam-title { color: #d4c5a9; }
+body.dark-mode .ulam-subtitle { color: #8a7a6a; }
+body.dark-mode .ulam-legend { background: #3d3530; }
+body.dark-mode .ulam-legend-item { color: #b8a898; }
+body.dark-mode .ulam-stats { color: #8a7a6a; }
+body.dark-mode #ulamCanvas { box-shadow: 0 2px 10px rgba(0,0,0,0.4); }
+/* View toggle flex-wrap for 4 buttons */
+.view-toggle { flex-wrap: wrap; }
+
+/* ─── Ulam Explainer ─────────────────────────────────────────────────────── */
+.ulam-explainer {
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+    border: 1px solid #c5d3f0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+}
+.ulam-explainer-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.ulam-explainer-icon {
+    font-size: 2rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.ulam-explainer-title {
+    margin: 0 0 2px 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2c3e7a;
+}
+.ulam-explainer-sub {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #5a6a9a;
+    font-style: italic;
+}
+.ulam-explainer-body p {
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
+    color: #3a4a6a;
+    line-height: 1.6;
+}
+.ulam-explainer-body p:last-child { margin-bottom: 0; }
+/* Dark mode */
+body.dark-mode .ulam-explainer {
+    background: linear-gradient(135deg, #2a2f3a 0%, #252a35 100%);
+    border-color: #3a4050;
+}
+body.dark-mode .ulam-explainer-title { color: #a8b8d8; }
+body.dark-mode .ulam-explainer-sub { color: #7a8aaa; }
+body.dark-mode .ulam-explainer-body p { color: #8a9ab8; }
