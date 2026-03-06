@@ -767,6 +767,11 @@ function updateSpiral() {
   if (ulamCont && ulamCont.style.display !== 'none') {
     renderUlamSpiral();
   }
+  // Also update Heatmap if it's visible
+  const heatmapCont = document.getElementById('heatmapContainer');
+  if (heatmapCont && heatmapCont.style.display !== 'none') {
+    renderHeatmap();
+  }
 }
 
 function clearSpiral() {
