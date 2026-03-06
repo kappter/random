@@ -777,6 +777,7 @@ function clearSpiral() {
     drawRadialPolygon();
   }
   clearUlamCanvas();
+  clearHeatmapCanvas();
 }
 
 // ─── Ulam Spiral Grid Visualization ─────────────────────────────────────────
@@ -947,50 +948,282 @@ function updateUlamLegend() {
   legendEl.innerHTML = html;
 }
 
-// View toggle functions
+// ─── Consecutive Pairs Heatmap ───────────────────────────────────────────────
+// pairMatrix[i][j] = number of times digit i was immediately followed by digit j
+let pairMatrix = [];
+let lastDigit = -1; // tracks the previous digit for pair recording
+let heatmapCanvas = null;
+let heatmapCtx = null;
+let heatmapTooltip = null; // floating tooltip div
+
+function initPairMatrix() {
+  pairMatrix = Array.from({ length: currentBase }, () => new Array(currentBase).fill(0));
+  lastDigit = -1;
+}
+
+function recordPair(digit) {
+  if (lastDigit >= 0 && lastDigit < currentBase && digit < currentBase) {
+    pairMatrix[lastDigit][digit]++;
+  }
+  lastDigit = digit;
+}
+
+function initHeatmapCanvas() {
+  heatmapCanvas = document.getElementById('heatmapCanvas');
+  heatmapCtx = heatmapCanvas ? heatmapCanvas.getContext('2d') : null;
+
+  // Create tooltip div
+  if (!heatmapTooltip) {
+    heatmapTooltip = document.createElement('div');
+    heatmapTooltip.id = 'heatmapTooltip';
+    Object.assign(heatmapTooltip.style, {
+      position: 'fixed',
+      background: 'rgba(20,20,30,0.92)',
+      color: '#fff',
+      padding: '6px 10px',
+      borderRadius: '6px',
+      fontSize: '0.78rem',
+      pointerEvents: 'none',
+      display: 'none',
+      zIndex: '9999',
+      whiteSpace: 'nowrap',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
+    });
+    document.body.appendChild(heatmapTooltip);
+  }
+
+  if (heatmapCanvas) {
+    heatmapCanvas.addEventListener('mousemove', onHeatmapMouseMove);
+    heatmapCanvas.addEventListener('mouseleave', () => { heatmapTooltip.style.display = 'none'; });
+  }
+}
+
+function onHeatmapMouseMove(e) {
+  if (!heatmapCanvas || pairMatrix.length === 0) return;
+  const rect = heatmapCanvas.getBoundingClientRect();
+  const scaleX = heatmapCanvas.width / rect.width;
+  const scaleY = heatmapCanvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  const base = pairMatrix.length;
+  const margin = 36;
+  const gridSize = heatmapCanvas.width - margin * 2;
+  const cellSize = gridSize / base;
+
+  const col = Math.floor((mx - margin) / cellSize);
+  const row = Math.floor((my - margin) / cellSize);
+
+  if (row < 0 || row >= base || col < 0 || col >= base) {
+    heatmapTooltip.style.display = 'none';
+    return;
+  }
+
+  const count = pairMatrix[row][col];
+  const total = pairMatrix[row].reduce((s, v) => s + v, 0);
+  const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+  const fromLabel = digitLabels[row] || row.toString();
+  const toLabel = digitLabels[col] || col.toString();
+
+  heatmapTooltip.textContent = `${fromLabel} → ${toLabel}: ${count} times (${pct}% of ${fromLabel}'s transitions)`;
+  heatmapTooltip.style.display = 'block';
+  heatmapTooltip.style.left = (e.clientX + 14) + 'px';
+  heatmapTooltip.style.top  = (e.clientY - 10) + 'px';
+}
+
+function clearHeatmapCanvas() {
+  initPairMatrix();
+  if (!heatmapCtx || !heatmapCanvas) return;
+  const isDark = document.body.classList.contains('dark-mode');
+  heatmapCtx.clearRect(0, 0, heatmapCanvas.width, heatmapCanvas.height);
+  heatmapCtx.fillStyle = isDark ? '#1e1e2e' : '#f8f9fa';
+  heatmapCtx.fillRect(0, 0, heatmapCanvas.width, heatmapCanvas.height);
+  document.getElementById('heatmapStats').textContent = '';
+  document.getElementById('heatmapTitle').textContent = 'Consecutive Pairs Heatmap';
+}
+
+function renderHeatmap() {
+  if (!heatmapCanvas || !heatmapCtx) return;
+
+  const base = currentBase;
+  const isDark = document.body.classList.contains('dark-mode');
+
+  // Canvas sizing: max 560px, min 200px
+  const maxCanvasSize = Math.min(560, window.innerWidth - 80);
+  const margin = 36;
+  const gridSize = maxCanvasSize - margin * 2;
+  const cellSize = Math.floor(gridSize / base);
+  const actualGrid = cellSize * base;
+  const canvasSize = actualGrid + margin * 2;
+
+  heatmapCanvas.width  = canvasSize;
+  heatmapCanvas.height = canvasSize;
+  heatmapCanvas.style.width  = canvasSize + 'px';
+  heatmapCanvas.style.height = canvasSize + 'px';
+
+  // Background
+  heatmapCtx.fillStyle = isDark ? '#1e1e2e' : '#f0f2f8';
+  heatmapCtx.fillRect(0, 0, canvasSize, canvasSize);
+
+  // Find max value for color scaling
+  let maxVal = 0;
+  for (let i = 0; i < base; i++)
+    for (let j = 0; j < base; j++)
+      if (pairMatrix[i][j] > maxVal) maxVal = pairMatrix[i][j];
+
+  // Compute expected value for uniform distribution
+  const totalPairs = pairMatrix.reduce((s, row) => s + row.reduce((rs, v) => rs + v, 0), 0);
+  const expected = totalPairs > 0 ? totalPairs / (base * base) : 0;
+
+  // Draw cells
+  for (let row = 0; row < base; row++) {
+    for (let col = 0; col < base; col++) {
+      const val = pairMatrix[row][col];
+      const intensity = maxVal > 0 ? val / maxVal : 0;
+
+      // Color: cool blue (low) → hot orange-red (high), with yellow midpoint
+      // Uses a perceptually-warm heatmap: black → dark blue → blue → cyan → green → yellow → orange → red
+      let r, g, b;
+      if (intensity < 0.25) {
+        const t = intensity / 0.25;
+        r = Math.round(0   + t * 0);
+        g = Math.round(0   + t * 80);
+        b = Math.round(60  + t * 180);
+      } else if (intensity < 0.5) {
+        const t = (intensity - 0.25) / 0.25;
+        r = Math.round(0   + t * 0);
+        g = Math.round(80  + t * 160);
+        b = Math.round(240 - t * 200);
+      } else if (intensity < 0.75) {
+        const t = (intensity - 0.5) / 0.25;
+        r = Math.round(0   + t * 255);
+        g = Math.round(240 - t * 40);
+        b = Math.round(40  - t * 40);
+      } else {
+        const t = (intensity - 0.75) / 0.25;
+        r = Math.round(255);
+        g = Math.round(200 - t * 200);
+        b = Math.round(0);
+      }
+
+      // Dim slightly in dark mode for contrast
+      if (isDark) { r = Math.round(r * 0.85); g = Math.round(g * 0.85); b = Math.round(b * 0.85); }
+
+      heatmapCtx.fillStyle = `rgb(${r},${g},${b})`;
+      const x = margin + col * cellSize;
+      const y = margin + row * cellSize;
+      heatmapCtx.fillRect(x, y, cellSize, cellSize);
+
+      // Cell border
+      heatmapCtx.strokeStyle = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)';
+      heatmapCtx.lineWidth = 0.5;
+      heatmapCtx.strokeRect(x, y, cellSize, cellSize);
+
+      // Count label (only if cell is large enough)
+      if (cellSize >= 28 && val > 0) {
+        heatmapCtx.fillStyle = intensity > 0.55 ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.7)';
+        heatmapCtx.font = `bold ${Math.min(11, cellSize * 0.32)}px sans-serif`;
+        heatmapCtx.textAlign = 'center';
+        heatmapCtx.textBaseline = 'middle';
+        heatmapCtx.fillText(val, x + cellSize / 2, y + cellSize / 2);
+      }
+    }
+  }
+
+  // Axis labels
+  const labelColor = isDark ? '#a0aac0' : '#3a4a6a';
+  heatmapCtx.fillStyle = labelColor;
+  heatmapCtx.textAlign = 'center';
+  heatmapCtx.textBaseline = 'middle';
+  const fontSize = Math.max(9, Math.min(13, cellSize * 0.38));
+  heatmapCtx.font = `600 ${fontSize}px sans-serif`;
+
+  for (let i = 0; i < base; i++) {
+    const label = digitLabels[i] || i.toString();
+    const pos = margin + i * cellSize + cellSize / 2;
+    // Top axis (column = "to" digit)
+    heatmapCtx.fillText(label, pos, margin / 2);
+    // Left axis (row = "from" digit)
+    heatmapCtx.textAlign = 'center';
+    heatmapCtx.fillText(label, margin / 2, pos);
+  }
+
+  // Axis title labels
+  heatmapCtx.font = `500 ${Math.max(9, fontSize - 1)}px sans-serif`;
+  heatmapCtx.fillStyle = isDark ? '#6a7a9a' : '#8a9ab8';
+  heatmapCtx.textAlign = 'center';
+  heatmapCtx.fillText('Next digit →', margin + actualGrid / 2, canvasSize - 6);
+  heatmapCtx.save();
+  heatmapCtx.translate(8, margin + actualGrid / 2);
+  heatmapCtx.rotate(-Math.PI / 2);
+  heatmapCtx.fillText('Current digit ↓', 0, 0);
+  heatmapCtx.restore();
+
+  // Highlight diagonal with a subtle outline
+  heatmapCtx.strokeStyle = isDark ? 'rgba(255,255,100,0.35)' : 'rgba(80,40,0,0.25)';
+  heatmapCtx.lineWidth = 1.5;
+  for (let i = 0; i < base; i++) {
+    const x = margin + i * cellSize;
+    const y = margin + i * cellSize;
+    heatmapCtx.strokeRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+  }
+
+  // Update title and stats
+  const algoName = getAlgorithmName();
+  document.getElementById('heatmapTitle').textContent =
+    `Consecutive Pairs Heatmap — ${algoName} (Base ${base})`;
+
+  // Uniformity score: coefficient of variation of all cells
+  const allVals = pairMatrix.flat();
+  const mean = allVals.reduce((s, v) => s + v, 0) / allVals.length;
+  const variance = allVals.reduce((s, v) => s + (v - mean) ** 2, 0) / allVals.length;
+  const cv = mean > 0 ? (Math.sqrt(variance) / mean * 100).toFixed(1) : '0.0';
+  const uniformityLabel = parseFloat(cv) < 30 ? '✅ Uniform (random-looking)'
+    : parseFloat(cv) < 60 ? '⚠️ Moderate structure'
+    : '🔴 High structure (biased)';
+
+  document.getElementById('heatmapStats').textContent =
+    `${base}×${base} grid • ${totalPairs.toLocaleString()} pairs • Expected per cell: ${expected.toFixed(1)} • CV: ${cv}% ${uniformityLabel}`;
+}
+
+// View toggle helper — hides all containers and deactivates all buttons
+function _hideAllViews() {
+  ['timeSeriesContainer','spiralContainer','ulamContainer','heatmapContainer','leadTimeContainer']
+    .forEach(id => { document.getElementById(id).style.display = 'none'; });
+  ['timeSeriesBtn','spiralBtn','ulamBtn','heatmapBtn','leadTimeBtn']
+    .forEach(id => { document.getElementById(id).classList.remove('active'); });
+}
+
 function showTimeSeriesView() {
+  _hideAllViews();
   document.getElementById('timeSeriesContainer').style.display = 'block';
-  document.getElementById('spiralContainer').style.display = 'none';
-  document.getElementById('ulamContainer').style.display = 'none';
-  document.getElementById('leadTimeContainer').style.display = 'none';
   document.getElementById('timeSeriesBtn').classList.add('active');
-  document.getElementById('spiralBtn').classList.remove('active');
-  document.getElementById('ulamBtn').classList.remove('active');
-  document.getElementById('leadTimeBtn').classList.remove('active');
 }
 
 function showSpiralView() {
-  document.getElementById('timeSeriesContainer').style.display = 'none';
+  _hideAllViews();
   document.getElementById('spiralContainer').style.display = 'block';
-  document.getElementById('ulamContainer').style.display = 'none';
-  document.getElementById('leadTimeContainer').style.display = 'none';
-  document.getElementById('timeSeriesBtn').classList.remove('active');
   document.getElementById('spiralBtn').classList.add('active');
-  document.getElementById('ulamBtn').classList.remove('active');
-  document.getElementById('leadTimeBtn').classList.remove('active');
-  drawRadialPolygon(); // Redraw in case it needs updating
+  drawRadialPolygon();
 }
 
 function showUlamView() {
-  document.getElementById('timeSeriesContainer').style.display = 'none';
-  document.getElementById('spiralContainer').style.display = 'none';
+  _hideAllViews();
   document.getElementById('ulamContainer').style.display = 'block';
-  document.getElementById('leadTimeContainer').style.display = 'none';
-  document.getElementById('timeSeriesBtn').classList.remove('active');
-  document.getElementById('spiralBtn').classList.remove('active');
   document.getElementById('ulamBtn').classList.add('active');
-  document.getElementById('leadTimeBtn').classList.remove('active');
-  renderUlamSpiral(); // Render with current data
+  renderUlamSpiral();
+}
+
+function showHeatmapView() {
+  _hideAllViews();
+  document.getElementById('heatmapContainer').style.display = 'block';
+  document.getElementById('heatmapBtn').classList.add('active');
+  renderHeatmap();
 }
 
 function showLeadTimeView() {
-  document.getElementById('timeSeriesContainer').style.display = 'none';
-  document.getElementById('spiralContainer').style.display = 'none';
-  document.getElementById('ulamContainer').style.display = 'none';
+  _hideAllViews();
   document.getElementById('leadTimeContainer').style.display = 'block';
-  document.getElementById('timeSeriesBtn').classList.remove('active');
-  document.getElementById('spiralBtn').classList.remove('active');
-  document.getElementById('ulamBtn').classList.remove('active');
   document.getElementById('leadTimeBtn').classList.add('active');
 }
 
@@ -1463,6 +1696,7 @@ async function calculate() {
       counts[digit]++;
       currentDigitIndex++;
       ulamDigitHistory.push(digit);
+      recordPair(digit);
       
       // Track lead time
       updateLeadTime();
@@ -1515,6 +1749,9 @@ function finishCalculation() {
   updateLeadTimeChart();
   updateStatistics();
   showSummary();
+  
+  // Render heatmap with final data (always kept up to date in background)
+  renderHeatmap();
   
   if (submittedGuess !== null) {
     checkGuess();
@@ -1747,6 +1984,7 @@ async function stepGeneration() {
     counts[digit]++;
     currentDigitIndex++;
     ulamDigitHistory.push(digit);
+    recordPair(digit);
     
     // Track lead time
     updateLeadTime();
@@ -2048,6 +2286,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAlgorithmInfo();
   initSpiralCanvas();
   initUlamCanvas();
+  initHeatmapCanvas();
+  initPairMatrix();
   
   document.getElementById('calcType').addEventListener('change', handleAlgorithmChange);
   
@@ -2090,6 +2330,12 @@ document.addEventListener('DOMContentLoaded', () => {
       renderUlamSpiral();
     } else {
       clearUlamCanvas();
+    }
+    // Redraw heatmap with new color scheme
+    if (pairMatrix.length > 0 && pairMatrix.flat().some(v => v > 0)) {
+      renderHeatmap();
+    } else {
+      clearHeatmapCanvas();
     }
   });
 });
