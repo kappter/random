@@ -260,13 +260,14 @@
         
         <!-- View Toggle -->
         <div class="view-toggle">
-            <button id="timeSeriesBtn" class="toggle-btn active" onclick="showTimeSeriesView()">📈 Time Series</button>
+            <button id="timeSeriesBtn" class="toggle-btn" onclick="showTimeSeriesView()">📈 Time Series</button>
             <button id="spiralBtn" class="toggle-btn" onclick="showSpiralView()">🎯 Radial</button>
             <button id="ulamBtn" class="toggle-btn" onclick="showUlamView()">🌀 Ulam Spiral</button>
-            <button id="leadTimeBtn" class="toggle-btn" onclick="showLeadTimeView()">👑 Lead Time</button>
+            <button id="heatmapBtn" class="toggle-btn" onclick="showHeatmapView()">🔥 Pairs Heatmap</button>
+            <button id="leadTimeBtn" class="toggle-btn active" onclick="showLeadTimeView()">👑 Lead Time</button>
         </div>
         
-        <div class="chart-container" id="timeSeriesContainer">
+        <div class="chart-container" id="timeSeriesContainer" style="display:none;">
             <canvas id="timeSeriesChart"></canvas>
         </div>
         
@@ -304,7 +305,36 @@
             <div class="ulam-stats" id="ulamStats"></div>
         </div>
         
-        <div class="chart-container" id="leadTimeContainer" style="display:none;">
+        <!-- Consecutive Pairs Heatmap Visualization -->
+        <div class="chart-container heatmap-container" id="heatmapContainer" style="display:none;">
+            <div class="heatmap-header">
+                <h3 class="heatmap-title" id="heatmapTitle">Consecutive Pairs Heatmap</h3>
+                <p class="heatmap-subtitle">How often is each digit immediately followed by each other digit?</p>
+            </div>
+
+            <!-- Educational Explainer -->
+            <div class="heatmap-explainer">
+                <div class="heatmap-explainer-header">
+                    <span class="heatmap-explainer-icon">🔥</span>
+                    <div>
+                        <h4 class="heatmap-explainer-title">What is the Consecutive Pairs Heatmap?</h4>
+                        <p class="heatmap-explainer-sub">A serial correlation detector — exposing hidden structure in digit sequences</p>
+                    </div>
+                </div>
+                <div class="heatmap-explainer-body">
+                    <p>Each cell at row <strong>i</strong>, column <strong>j</strong> shows how often digit <strong>i</strong> was <em>immediately followed</em> by digit <strong>j</strong> in the generated sequence. This is called a <strong>lag-1 transition matrix</strong> — a core tool in statistical randomness testing.</p>
+                    <p>In a <strong>truly random sequence</strong>, every pair (i→j) should occur with roughly equal frequency, producing a <em>uniform, flat heatmap</em> with no visible hot-spots. <strong>Biased or structured PRNGs</strong> reveal themselves as bright diagonal bands, corner clusters, or stripes. The infamous <strong>RANDU algorithm</strong> is a perfect example — its consecutive pairs collapse onto just 15 diagonal lines, visible immediately in this view.</p>
+                    <p>Cell color intensity encodes frequency: <strong>bright/hot = frequent pair</strong>, <strong>dark/cool = rare pair</strong>. Hover over any cell to see the exact count and percentage. The <strong>diagonal</strong> (i→i) shows how often the same digit repeats consecutively — in a fair sequence, this should match all other cells.</p>
+                </div>
+            </div>
+
+            <div class="heatmap-canvas-wrap">
+                <canvas id="heatmapCanvas"></canvas>
+            </div>
+            <div class="heatmap-stats" id="heatmapStats"></div>
+        </div>
+
+        <div class="chart-container" id="leadTimeContainer">
             <canvas id="leadTimeChart"></canvas>
         </div>
 

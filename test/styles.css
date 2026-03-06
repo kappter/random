@@ -1712,3 +1712,93 @@ body.dark-mode .ulam-explainer {
 body.dark-mode .ulam-explainer-title { color: #a8b8d8; }
 body.dark-mode .ulam-explainer-sub { color: #7a8aaa; }
 body.dark-mode .ulam-explainer-body p { color: #8a9ab8; }
+
+/* ─── Consecutive Pairs Heatmap ──────────────────────────────────────────── */
+.heatmap-container {
+    padding: 20px;
+}
+.heatmap-header {
+    text-align: center;
+    margin-bottom: 12px;
+}
+.heatmap-title {
+    margin: 0 0 4px 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #2c3e7a;
+}
+.heatmap-subtitle {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #5a6a9a;
+}
+/* Explainer */
+.heatmap-explainer {
+    background: linear-gradient(135deg, #fff5f0 0%, #fff0ea 100%);
+    border: 1px solid #f0d0c0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+.heatmap-explainer-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.heatmap-explainer-icon {
+    font-size: 2rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.heatmap-explainer-title {
+    margin: 0 0 2px 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #7a2c1a;
+}
+.heatmap-explainer-sub {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #9a5a3a;
+    font-style: italic;
+}
+.heatmap-explainer-body p {
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
+    color: #5a3020;
+    line-height: 1.6;
+}
+.heatmap-explainer-body p:last-child { margin-bottom: 0; }
+/* Canvas wrap */
+.heatmap-canvas-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 12px auto;
+    overflow: auto;
+}
+#heatmapCanvas {
+    display: block;
+    border-radius: 6px;
+    cursor: crosshair;
+}
+/* Stats bar */
+.heatmap-stats {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #7a8aaa;
+    margin-top: 8px;
+    font-style: italic;
+}
+/* Dark mode */
+body.dark-mode .heatmap-title { color: #a8b8d8; }
+body.dark-mode .heatmap-subtitle { color: #7a8aaa; }
+body.dark-mode .heatmap-explainer {
+    background: linear-gradient(135deg, #2a2520 0%, #251e18 100%);
+    border-color: #4a3020;
+}
+body.dark-mode .heatmap-explainer-title { color: #d8a898; }
+body.dark-mode .heatmap-explainer-sub { color: #a87a5a; }
+body.dark-mode .heatmap-explainer-body p { color: #b89888; }
+body.dark-mode .heatmap-stats { color: #6a7a9a; }
