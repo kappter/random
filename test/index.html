@@ -139,6 +139,31 @@
             </div>
         </div>
 
+        <!-- Pi Day Historical Timeline Panel -->
+        <div id="piTimelinePanel" class="pi-timeline-panel" style="display:none;">
+            <div class="pi-timeline-header">
+                <div class="pi-timeline-icon">π</div>
+                <div class="pi-timeline-title-block">
+                    <h3 class="pi-timeline-title">The Human Quest for Pi</h3>
+                    <p class="pi-timeline-subtitle">Each digit you reveal echoes thousands of years of mathematical history</p>
+                </div>
+                <div class="pi-timeline-counter">
+                    <span class="pi-timeline-unlocked-label">Milestones Unlocked</span>
+                    <span id="piTimelineUnlockedCount" class="pi-timeline-unlocked-num">0</span>
+                    <span class="pi-timeline-total-label">of <span id="piTimelineTotalCount">0</span></span>
+                </div>
+            </div>
+            <div class="pi-timeline-progress-bar-wrap">
+                <div id="piTimelineProgressBar" class="pi-timeline-progress-bar" style="width:0%"></div>
+            </div>
+            <div id="piTimelineMilestones" class="pi-timeline-milestones">
+                <!-- Milestone cards injected by JS -->
+            </div>
+            <div class="pi-timeline-footer">
+                <span class="pi-timeline-footer-note">💡 Timeline shows the first known point in time each digit count was achieved. Generate more digits to unlock further milestones.</span>
+            </div>
+        </div>
+
         <!-- Benford's Law Analysis Panel -->
         <div id="benfordPanel" class="benford-panel" style="display:none;">
 

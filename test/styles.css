@@ -1802,3 +1802,128 @@ body.dark-mode .heatmap-explainer-title { color: #d8a898; }
 body.dark-mode .heatmap-explainer-sub { color: #a87a5a; }
 body.dark-mode .heatmap-explainer-body p { color: #b89888; }
 body.dark-mode .heatmap-stats { color: #6a7a9a; }
+
+
+/* ============================================================
+   PI DAY HISTORICAL TIMELINE PANEL
+   ============================================================ */
+
+.pi-timeline-panel {
+  background: linear-gradient(135deg, #0d1b3e 0%, #1a2a5e 50%, #0d1b3e 100%);
+  border: 2px solid #3a5aad;
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+  box-shadow: 0 8px 32px rgba(58, 90, 173, 0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+  position: relative;
+  overflow: hidden;
+}
+.pi-timeline-panel::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(100,140,255,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.pi-timeline-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.pi-timeline-icon {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #7ab3ff;
+  text-shadow: 0 0 20px rgba(122, 179, 255, 0.6);
+  font-family: Georgia, serif;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.pi-timeline-title-block { flex: 1; min-width: 200px; }
+.pi-timeline-title { margin: 0 0 4px 0; font-size: 1.3rem; font-weight: 700; color: #e8f0ff; }
+.pi-timeline-subtitle { margin: 0; font-size: 0.85rem; color: #8aa8d8; font-style: italic; }
+.pi-timeline-counter {
+  display: flex; flex-direction: column; align-items: center;
+  background: rgba(122,179,255,0.12); border: 1px solid rgba(122,179,255,0.3);
+  border-radius: 10px; padding: 10px 18px; text-align: center; flex-shrink: 0;
+}
+.pi-timeline-unlocked-label { font-size: 0.7rem; color: #8aa8d8; text-transform: uppercase; letter-spacing: 0.08em; }
+.pi-timeline-unlocked-num { font-size: 2rem; font-weight: 800; color: #7ab3ff; line-height: 1.1; }
+.pi-timeline-total-label { font-size: 0.75rem; color: #6a88b8; }
+.pi-timeline-progress-bar-wrap {
+  background: rgba(255,255,255,0.08); border-radius: 6px; height: 8px; margin-bottom: 24px; overflow: hidden;
+}
+.pi-timeline-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3a5aad, #7ab3ff, #a8d8ff);
+  border-radius: 6px; transition: width 0.5s ease;
+  box-shadow: 0 0 8px rgba(122,179,255,0.6);
+}
+.pi-timeline-milestones { display: flex; flex-direction: column; gap: 0; position: relative; }
+.pi-timeline-milestones::before {
+  content: ''; position: absolute; left: 52px; top: 0; bottom: 0; width: 2px;
+  background: linear-gradient(to bottom, rgba(122,179,255,0.6), rgba(122,179,255,0.1)); z-index: 0;
+}
+.pi-milestone {
+  display: flex; align-items: flex-start; gap: 16px; padding: 14px 0;
+  position: relative; z-index: 1; opacity: 0.35; filter: grayscale(0.6);
+  transition: opacity 0.6s ease, filter 0.6s ease, transform 0.4s ease;
+}
+.pi-milestone.unlocked { opacity: 1; filter: none; }
+.pi-milestone.just-unlocked { animation: milestoneUnlock 1.2s ease forwards; }
+@keyframes milestoneUnlock {
+  0%   { transform: translateX(-8px); opacity: 0.4; }
+  30%  { transform: translateX(4px); opacity: 1; }
+  60%  { transform: translateX(-2px); }
+  100% { transform: translateX(0); opacity: 1; }
+}
+.pi-milestone-dot {
+  width: 28px; height: 28px; border-radius: 50%; border: 3px solid;
+  display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
+  flex-shrink: 0; margin-left: 39px; background: #0d1b3e; z-index: 2; position: relative;
+  transition: box-shadow 0.6s ease;
+}
+.pi-milestone.unlocked .pi-milestone-dot { box-shadow: 0 0 12px currentColor; }
+.era-ancient .pi-milestone-dot       { border-color: #c8a84b; color: #c8a84b; }
+.era-medieval .pi-milestone-dot      { border-color: #7ec8a0; color: #7ec8a0; }
+.era-early-modern .pi-milestone-dot  { border-color: #e08060; color: #e08060; }
+.era-modern .pi-milestone-dot        { border-color: #a070d0; color: #a070d0; }
+.era-computer .pi-milestone-dot      { border-color: #50b8e8; color: #50b8e8; }
+.era-supercomputer .pi-milestone-dot { border-color: #f06090; color: #f06090; }
+.pi-milestone-card {
+  flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 12px 16px;
+  transition: background 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease;
+}
+.pi-milestone.unlocked .pi-milestone-card { background: rgba(255,255,255,0.07); border-color: rgba(122,179,255,0.25); }
+.era-ancient.unlocked .pi-milestone-card      { box-shadow: 0 0 12px rgba(200,168,75,0.15); }
+.era-medieval.unlocked .pi-milestone-card     { box-shadow: 0 0 12px rgba(126,200,160,0.15); }
+.era-early-modern.unlocked .pi-milestone-card { box-shadow: 0 0 12px rgba(224,128,96,0.15); }
+.era-modern.unlocked .pi-milestone-card       { box-shadow: 0 0 12px rgba(160,112,208,0.15); }
+.era-computer.unlocked .pi-milestone-card     { box-shadow: 0 0 12px rgba(80,184,232,0.15); }
+.era-supercomputer.unlocked .pi-milestone-card { box-shadow: 0 0 12px rgba(240,96,144,0.15); }
+.pi-milestone-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.pi-milestone-digits { font-size: 1.05rem; font-weight: 800; color: #7ab3ff; }
+.pi-milestone-year { font-size: 0.8rem; color: #8aa8d8; font-weight: 600; }
+.pi-milestone-who { font-size: 0.95rem; font-weight: 700; color: #d8e8ff; margin-bottom: 3px; }
+.pi-milestone-note { font-size: 0.8rem; color: #7a98c0; line-height: 1.4; }
+.pi-milestone-badge {
+  display: inline-block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; margin-left: 6px; vertical-align: middle;
+}
+.badge-record   { background: rgba(255,215,0,0.2);  color: #ffd700; border: 1px solid rgba(255,215,0,0.4); }
+.badge-first    { background: rgba(80,200,120,0.2);  color: #50c878; border: 1px solid rgba(80,200,120,0.4); }
+.badge-computer { background: rgba(80,184,232,0.2);  color: #50b8e8; border: 1px solid rgba(80,184,232,0.4); }
+.badge-proof    { background: rgba(200,150,255,0.2); color: #c896ff; border: 1px solid rgba(200,150,255,0.4); }
+.pi-timeline-era-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.pi-era-chip { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #8aa8d8; }
+.pi-era-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.pi-timeline-footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(122,179,255,0.15); }
+.pi-timeline-footer-note { font-size: 0.78rem; color: #6a88b8; font-style: italic; }
+body.dark-mode .pi-timeline-panel {
+  background: linear-gradient(135deg, #080f20 0%, #101e40 50%, #080f20 100%);
+  border-color: #2a4a9d;
+}
