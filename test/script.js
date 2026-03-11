@@ -3069,90 +3069,142 @@ const PI_MILESTONES = [
 // State
 let piTimelineInitialized = false;
 let piTimelineLastUnlocked = -1;
+let piTlCurrentIndex = 0;  // which milestone card is currently shown
+let piTlUnlockedCount = 0; // how many are unlocked
+
+// Era color map
+const ERA_COLORS = {
+  ancient: '#c8a84b',
+  medieval: '#7ec8a0',
+  earlymodern: '#e08060',
+  modern: '#a070d0',
+  computer: '#50b8e8',
+  supercomputer: '#f06090'
+};
+
+function piTlFormatDigits(n) {
+  if (n >= 1e12) return (n / 1e12).toFixed(n % 1e12 === 0 ? 0 : 3) + ' trillion';
+  if (n >= 1e9)  return (n / 1e9).toFixed(n % 1e9 === 0 ? 0 : 3) + ' billion';
+  if (n >= 1e6)  return (n / 1e6).toFixed(n % 1e6 === 0 ? 0 : 3) + ' million';
+  return n.toLocaleString();
+}
+
+function piTlRenderCard(index, flash) {
+  const card = document.getElementById('piTlCard');
+  if (!card) return;
+
+  const m = PI_MILESTONES[index];
+  const isUnlocked = index < piTlUnlockedCount;
+
+  if (!isUnlocked) {
+    card.style.setProperty('--era-color', 'rgba(100,160,255,0.2)');
+    card.innerHTML = `<div class="pi-tl-card-locked">🔒 Unlock at ${piTlFormatDigits(m.digits)} digits — keep generating!</div>`;
+    card.classList.remove('just-unlocked');
+    return;
+  }
+
+  const eraKey = m.era.replace(/-/g,'').replace(/ /g,'').toLowerCase();
+  const eraColor = ERA_COLORS[eraKey] || '#7ec8ff';
+  card.style.setProperty('--era-color', eraColor);
+
+  const badgeLabels = { record: 'World Record', first: 'First Ever', computer: 'Electronic Computer', proof: 'Mathematical Proof' };
+  const badgesHtml = (m.badges || []).map(b =>
+    `<span class="pi-tl-badge pi-tl-badge-${b}">${badgeLabels[b] || b}</span>`
+  ).join('');
+
+  card.innerHTML = `
+    <div class="pi-tl-card-top">
+      <span class="pi-tl-card-emoji">${m.icon}</span>
+      <span class="pi-tl-card-digits">${piTlFormatDigits(m.digits)} digits</span>
+      <span class="pi-tl-card-year">${m.year}</span>
+      <span class="pi-tl-card-badges">${badgesHtml}</span>
+    </div>
+    <div class="pi-tl-card-who">${m.who}</div>
+    <div class="pi-tl-card-note">${m.note}</div>`;
+
+  if (flash) {
+    card.classList.remove('just-unlocked');
+    void card.offsetWidth; // force reflow
+    card.classList.add('just-unlocked');
+    setTimeout(() => card.classList.remove('just-unlocked'), 1300);
+  }
+}
+
+function piTlRenderDots() {
+  const dotsEl = document.getElementById('piTlDots');
+  if (!dotsEl) return;
+  dotsEl.innerHTML = PI_MILESTONES.map((m, i) => {
+    let cls = 'pi-tl-dot';
+    if (i < piTlUnlockedCount) cls += ' unlocked';
+    else cls += ' locked-dot';
+    if (i === piTlCurrentIndex) cls += ' active';
+    return `<span class="${cls}" onclick="piTimelineGoTo(${i})" title="${m.who} (${m.year})"></span>`;
+  }).join('');
+}
+
+function piTlUpdateNav() {
+  const prev = document.getElementById('piTlPrevBtn');
+  const next = document.getElementById('piTlNextBtn');
+  if (prev) prev.disabled = piTlCurrentIndex <= 0;
+  if (next) next.disabled = piTlCurrentIndex >= PI_MILESTONES.length - 1;
+}
+
+function piTimelineNav(dir) {
+  const newIdx = piTlCurrentIndex + dir;
+  if (newIdx < 0 || newIdx >= PI_MILESTONES.length) return;
+  piTlCurrentIndex = newIdx;
+  piTlRenderCard(piTlCurrentIndex, false);
+  piTlRenderDots();
+  piTlUpdateNav();
+}
+
+function piTimelineGoTo(idx) {
+  piTlCurrentIndex = idx;
+  piTlRenderCard(piTlCurrentIndex, false);
+  piTlRenderDots();
+  piTlUpdateNav();
+}
 
 function initPiTimeline() {
   const panel = document.getElementById('piTimelinePanel');
   if (!panel) return;
-
-  // Build era legend
-  const eraLegend = `
-    <div class="pi-timeline-era-legend">
-      <span class="pi-era-chip"><span class="pi-era-dot" style="background:#c8a84b"></span> Ancient World</span>
-      <span class="pi-era-chip"><span class="pi-era-dot" style="background:#7ec8a0"></span> Medieval</span>
-      <span class="pi-era-chip"><span class="pi-era-dot" style="background:#e08060"></span> Early Modern</span>
-      <span class="pi-era-chip"><span class="pi-era-dot" style="background:#a070d0"></span> Modern (Pre-Computer)</span>
-      <span class="pi-era-chip"><span class="pi-era-dot" style="background:#50b8e8"></span> Computer Age</span>
-      <span class="pi-era-chip"><span class="pi-era-dot" style="background:#f06090"></span> Supercomputer Era</span>
-    </div>`;
-
-  // Build milestone cards (all locked initially)
-  const milestonesHtml = PI_MILESTONES.map((m, i) => {
-    const badgeHtml = (m.badges || []).map(b => {
-      const labels = { record: 'World Record', first: 'First Ever', computer: 'Electronic Computer', proof: 'Mathematical Proof' };
-      return `<span class="pi-milestone-badge badge-${b}">${labels[b] || b}</span>`;
-    }).join('');
-
-    const digitLabel = m.digits >= 1e12
-      ? (m.digits / 1e12).toFixed(m.digits % 1e12 === 0 ? 0 : 3) + ' trillion'
-      : m.digits >= 1e9
-        ? (m.digits / 1e9).toFixed(m.digits % 1e9 === 0 ? 0 : 3) + ' billion'
-        : m.digits >= 1e6
-          ? (m.digits / 1e6).toFixed(m.digits % 1e6 === 0 ? 0 : 3) + ' million'
-          : m.digits.toLocaleString();
-
-    return `
-      <div class="pi-milestone era-${m.era}" id="pi-milestone-${i}" data-digits="${m.digits}">
-        <div class="pi-milestone-dot">${m.icon}</div>
-        <div class="pi-milestone-card">
-          <div class="pi-milestone-top">
-            <span class="pi-milestone-digits">${digitLabel} digits</span>
-            <span class="pi-milestone-year">${m.year}</span>
-            ${badgeHtml}
-          </div>
-          <div class="pi-milestone-who">${m.who}</div>
-          <div class="pi-milestone-note">${m.note}</div>
-        </div>
-      </div>`;
-  }).join('');
-
-  document.getElementById('piTimelineMilestones').innerHTML = eraLegend + milestonesHtml;
+  piTlCurrentIndex = 0;
+  piTlUnlockedCount = 0;
   document.getElementById('piTimelineTotalCount').textContent = PI_MILESTONES.length;
   document.getElementById('piTimelineUnlockedCount').textContent = '0';
   document.getElementById('piTimelineProgressBar').style.width = '0%';
-
+  piTlRenderCard(0, false);
+  piTlRenderDots();
+  piTlUpdateNav();
   piTimelineInitialized = true;
   piTimelineLastUnlocked = -1;
 }
 
 function updatePiTimeline(digitCount) {
   if (!piTimelineInitialized) return;
-
-  let unlockedCount = 0;
-  let newUnlock = false;
-
+  let newUnlockIdx = -1;
+  let count = 0;
   PI_MILESTONES.forEach((m, i) => {
-    const el = document.getElementById(`pi-milestone-${i}`);
-    if (!el) return;
-
     if (digitCount >= m.digits) {
-      unlockedCount++;
-      if (!el.classList.contains('unlocked')) {
-        el.classList.add('unlocked');
-        el.classList.add('just-unlocked');
-        newUnlock = true;
-        // Remove animation class after it completes
-        setTimeout(() => el.classList.remove('just-unlocked'), 1300);
-        // Scroll the newly unlocked milestone into view (gently)
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 200);
-      }
+      count++;
+      if (i >= piTlUnlockedCount) newUnlockIdx = i; // newly unlocked
     }
   });
+  const prevCount = piTlUnlockedCount;
+  piTlUnlockedCount = count;
 
-  document.getElementById('piTimelineUnlockedCount').textContent = unlockedCount;
-  const pct = (unlockedCount / PI_MILESTONES.length * 100).toFixed(1);
-  document.getElementById('piTimelineProgressBar').style.width = pct + '%';
+  if (count !== prevCount) {
+    // New milestone(s) unlocked — jump to the latest one and flash it
+    if (newUnlockIdx >= 0) {
+      piTlCurrentIndex = newUnlockIdx;
+    }
+    document.getElementById('piTimelineUnlockedCount').textContent = count;
+    const pct = (count / PI_MILESTONES.length * 100).toFixed(1);
+    document.getElementById('piTimelineProgressBar').style.width = pct + '%';
+    piTlRenderCard(piTlCurrentIndex, true);
+    piTlRenderDots();
+    piTlUpdateNav();
+  }
 }
 
 function showPiTimeline() {
@@ -3160,15 +3212,12 @@ function showPiTimeline() {
   if (!panel) return;
   panel.style.display = 'block';
   if (!piTimelineInitialized) initPiTimeline();
-  // Re-apply current unlock state
   updatePiTimeline(currentDigitIndex);
 }
-
 function hidePiTimeline() {
   const panel = document.getElementById('piTimelinePanel');
   if (panel) panel.style.display = 'none';
 }
-
 function checkPiTimelineVisibility() {
   const calcType = document.getElementById('calcType').value;
   const base = parseInt(document.getElementById('baseSystem').value);
@@ -3178,13 +3227,19 @@ function checkPiTimelineVisibility() {
     hidePiTimeline();
   }
 }
-
 function resetPiTimeline() {
   piTimelineInitialized = false;
   piTimelineLastUnlocked = -1;
-  const milestonesDiv = document.getElementById('piTimelineMilestones');
-  if (milestonesDiv) milestonesDiv.innerHTML = '';
-  document.getElementById('piTimelineUnlockedCount').textContent = '0';
-  document.getElementById('piTimelineProgressBar').style.width = '0%';
+  piTlCurrentIndex = 0;
+  piTlUnlockedCount = 0;
+  const card = document.getElementById('piTlCard');
+  if (card) card.innerHTML = '<div class="pi-tl-card-locked">🔒 Generate digits to unlock milestones</div>';
+  const dots = document.getElementById('piTlDots');
+  if (dots) dots.innerHTML = '';
+  const countEl = document.getElementById('piTimelineUnlockedCount');
+  if (countEl) countEl.textContent = '0';
+  const bar = document.getElementById('piTimelineProgressBar');
+  if (bar) bar.style.width = '0%';
   hidePiTimeline();
 }
+
