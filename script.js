@@ -767,6 +767,11 @@ function updateSpiral() {
   if (ulamCont && ulamCont.style.display !== 'none') {
     renderUlamSpiral();
   }
+  // Also update Heatmap if it's visible
+  const heatmapCont = document.getElementById('heatmapContainer');
+  if (heatmapCont && heatmapCont.style.display !== 'none') {
+    renderHeatmap();
+  }
 }
 
 function clearSpiral() {
@@ -1704,6 +1709,9 @@ async function calculate() {
       // Update spiral visualization
       updateSpiral();
       
+      // Update Pi Day timeline (only active for Pi + base 10)
+      if (piTimelineInitialized) updatePiTimeline(currentDigitIndex);
+      
       const digitStr = digitLabels[digit];
       document.getElementById('digitSequence').value += digitStr;
       document.getElementById('liveDigit').textContent = digitStr;
@@ -1992,6 +2000,9 @@ async function stepGeneration() {
     // Update spiral visualization
     updateSpiral();
     
+    // Update Pi Day timeline (only active for Pi + base 10)
+    if (piTimelineInitialized) updatePiTimeline(currentDigitIndex);
+    
     const digitStr = digitLabels[digit];
     document.getElementById('digitSequence').value += digitStr;
     document.getElementById('liveDigit').textContent = digitStr;
@@ -2026,6 +2037,8 @@ function reset() {
   document.getElementById('guessResult').textContent = '';
   document.getElementById('pauseBtn').textContent = 'Pause';
   
+  resetPiTimeline();
+  checkPiTimelineVisibility();
   updateStatistics();
   updateChart();
 }
@@ -2288,6 +2301,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initUlamCanvas();
   initHeatmapCanvas();
   initPairMatrix();
+  checkPiTimelineVisibility();
   
   document.getElementById('calcType').addEventListener('change', handleAlgorithmChange);
   
@@ -2359,6 +2373,7 @@ function handleAlgorithmChange() {
   }
   
   updateAlgorithmInfo();
+  checkPiTimelineVisibility();
 }
 
 // Drag-and-drop handlers
@@ -2805,3 +2820,426 @@ function* fileUploadGenerator(base) {
     }
   }
 }
+
+// ============================================================
+// PI DAY HISTORICAL TIMELINE
+// Shows the human history of Pi digit computation, unlocking
+// milestones as digits are generated in base 10.
+// ============================================================
+
+// Curated milestones: { digits, year, who, note, era, badges, icon }
+// era: ancient | medieval | early-modern | modern | computer | supercomputer
+const PI_MILESTONES = [
+  {
+    digits: 1,
+    year: '~2000 BC',
+    who: 'Ancient Egyptians & Babylonians',
+    note: 'The Rhind Papyrus (Egypt) and Babylonian clay tablets both record approximations of Pi to 1 decimal place — 3.1605 and 3.125 respectively. Humanity\'s first conscious encounter with the circle constant.',
+    era: 'ancient',
+    badges: ['first'],
+    icon: '🏺'
+  },
+  {
+    digits: 2,
+    year: '~250 BC',
+    who: 'Archimedes of Syracuse',
+    note: 'Using inscribed and circumscribed 96-sided polygons, Archimedes proved 3.1408 < π < 3.1429 — the first rigorous mathematical bound. This was the first true algorithm for Pi, capable of arbitrary precision.',
+    era: 'ancient',
+    badges: ['record', 'first'],
+    icon: '⚙️'
+  },
+  {
+    digits: 3,
+    year: '150 AD',
+    who: 'Claudius Ptolemy',
+    note: 'The Greek-Egyptian astronomer computed π ≈ 377/120 = 3.14166..., correct to 3 decimal places, in his landmark work Almagest.',
+    era: 'ancient',
+    badges: ['record'],
+    icon: '🌌'
+  },
+  {
+    digits: 5,
+    year: '480 AD',
+    who: 'Zu Chongzhi (China)',
+    note: 'The Chinese mathematician computed 3.1415926 < π < 3.1415927 — correct to 7 decimal places — using a 12,288-sided polygon. His approximation 355/113 (Milü) was not surpassed in accuracy for nearly 900 years.',
+    era: 'ancient',
+    badges: ['record'],
+    icon: '🐉'
+  },
+  {
+    digits: 7,
+    year: '480 AD',
+    who: 'Zu Chongzhi (China)',
+    note: 'Zu\'s result of 7 correct decimal places stood as the world record for approximately 900 years — one of the longest-standing mathematical records in history.',
+    era: 'ancient',
+    badges: ['record'],
+    icon: '🐉'
+  },
+  {
+    digits: 10,
+    year: '~1400',
+    who: 'Madhava of Sangamagrama (India)',
+    note: 'The Kerala mathematician discovered the infinite power series for π (now called the Leibniz–Gregory–Madhava series) and used it to compute 10 correct decimal places — a breakthrough 300 years before European mathematicians found the same series.',
+    era: 'medieval',
+    badges: ['record', 'first'],
+    icon: '📜'
+  },
+  {
+    digits: 16,
+    year: '1424',
+    who: 'Jamshīd al-Kāshī (Persia)',
+    note: 'The Persian astronomer computed π to 16 correct decimal places using a polygon with 3×2²⁸ sides — an extraordinary feat of hand calculation. He worked at the Samarkand Observatory under Ulugh Beg.',
+    era: 'medieval',
+    badges: ['record'],
+    icon: '🕌'
+  },
+  {
+    digits: 35,
+    year: '1621',
+    who: 'Willebrord Snell (Netherlands)',
+    note: 'Using a refinement of Archimedes\' polygon method, Snell computed 35 correct decimal places. He was a student of Ludolph van Ceulen, whose 35-digit result was engraved on his tombstone.',
+    era: 'early-modern',
+    badges: ['record'],
+    icon: '🔭'
+  },
+  {
+    digits: 71,
+    year: '1699',
+    who: 'Abraham Sharp (England)',
+    note: 'Using the Gregory–Leibniz series for arctan(1/√3), Sharp computed 71 correct decimal places — the first major computation using an infinite series rather than polygons.',
+    era: 'early-modern',
+    badges: ['record'],
+    icon: '📐'
+  },
+  {
+    digits: 100,
+    year: '1706',
+    who: 'John Machin (England)',
+    note: 'Machin derived his famous formula π/4 = 4·arctan(1/5) − arctan(1/239) and used it to compute 100 decimal places. The Machin-like formula family became the standard method for centuries. Also in 1706, William Jones first used the Greek letter π to denote the constant.',
+    era: 'early-modern',
+    badges: ['record', 'first'],
+    icon: '🇬🇧'
+  },
+  {
+    digits: 200,
+    year: '1844',
+    who: 'Zacharias Dase (Germany)',
+    note: 'A calculating prodigy who could mentally multiply 100-digit numbers, Dase computed 200 correct decimal places in just 2 months using a Machin-like formula. He was coached by Carl Friedrich Gauss.',
+    era: 'early-modern',
+    badges: ['record'],
+    icon: '🧮'
+  },
+  {
+    digits: 440,
+    year: '1853',
+    who: 'William Rutherford (England)',
+    note: 'Rutherford computed 440 correct decimal places, surpassing his own earlier record. This era of hand computation was approaching its limits — each new record required years of painstaking arithmetic.',
+    era: 'early-modern',
+    badges: ['record'],
+    icon: '✍️'
+  },
+  {
+    digits: 527,
+    year: '1853',
+    who: 'William Shanks (England)',
+    note: 'Shanks spent years computing 707 decimal places, but an error at digit 528 invalidated the rest. The mistake was only discovered in 1946 by D.F. Ferguson using a mechanical calculator — 73 years later.',
+    era: 'modern',
+    badges: [],
+    icon: '⚠️'
+  },
+  {
+    digits: 620,
+    year: '1946',
+    who: 'D.F. Ferguson (England)',
+    note: 'Using a mechanical desk calculator, Ferguson computed 620 correct decimal places and discovered Shanks\' long-standing error. He went on to compute 808 digits by September 1947 — the last major pre-computer record.',
+    era: 'modern',
+    badges: ['record'],
+    icon: '🖩'
+  },
+  {
+    digits: 808,
+    year: '1947',
+    who: 'D.F. Ferguson (England)',
+    note: 'Ferguson\'s final hand-calculation record of 808 digits, achieved with a mechanical calculator. This was the last world record set without an electronic computer.',
+    era: 'modern',
+    badges: ['record'],
+    icon: '🖩'
+  },
+  {
+    digits: 1120,
+    year: '1949',
+    who: 'Levi B. Smith & John Wrench',
+    note: 'The last pre-ENIAC record: 1,120 digits computed with a mechanical desk calculator. Just months later, the electronic age would shatter all previous records.',
+    era: 'modern',
+    badges: ['record'],
+    icon: '📟'
+  },
+  {
+    digits: 2037,
+    year: 'Sep 1949',
+    who: 'G.W. Reitwiesner et al. (ENIAC)',
+    note: 'The ENIAC — one of the first electronic computers — computed 2,037 digits of Pi in just 70 hours. This immediately surpassed all human hand-calculation records. The computer age of Pi had begun.',
+    era: 'computer',
+    badges: ['record', 'computer', 'first'],
+    icon: '💻'
+  },
+  {
+    digits: 10000,
+    year: 'Jan 1958',
+    who: 'François Genuys (IBM 704, Paris)',
+    note: 'The first computation to reach 10,000 decimal places, completed in just 1.7 hours on an IBM 704 mainframe. A milestone that would have taken centuries by hand.',
+    era: 'computer',
+    badges: ['record', 'computer'],
+    icon: '🖥️'
+  },
+  {
+    digits: 100265,
+    year: '1961',
+    who: 'Daniel Shanks & John Wrench (IBM 7090)',
+    note: 'The first computation to exceed 100,000 decimal places, completed in 8.7 hours on an IBM 7090 in New York. Shanks (no relation to William Shanks) used the Machin formula with improved algorithms.',
+    era: 'computer',
+    badges: ['record', 'computer'],
+    icon: '🖥️'
+  },
+  {
+    digits: 1000000,
+    year: '1973',
+    who: 'Jean Guilloud & Martine Bouyer (CDC 7600)',
+    note: 'The first computation to exceed one million decimal places, taking 23.3 hours on a CDC 7600 supercomputer in Paris. A psychological milestone — Pi to a million places.',
+    era: 'computer',
+    badges: ['record', 'computer'],
+    icon: '🎯'
+  },
+  {
+    digits: 1000000000,
+    year: 'Aug 1989',
+    who: 'Chudnovsky Brothers (IBM 3090)',
+    note: 'Gregory and David Chudnovsky, working from their New York apartment with a homemade supercomputer, crossed the billion-digit barrier. Their Chudnovsky algorithm (1987) is still used in record computations today.',
+    era: 'supercomputer',
+    badges: ['record'],
+    icon: '🏆'
+  },
+  {
+    digits: 1000000000000,
+    year: 'Nov 2002',
+    who: 'Yasumasa Kanada & team (University of Tokyo)',
+    note: 'The first computation to exceed one trillion decimal places — 1,241,100,000,000 digits — taking 600 hours on a Hitachi supercomputer. Kanada dominated Pi records for two decades.',
+    era: 'supercomputer',
+    badges: ['record'],
+    icon: '🌏'
+  },
+  {
+    digits: 10000000000000,
+    year: 'Oct 2011',
+    who: 'Shigeru Kondo (y-cruncher)',
+    note: 'Ten trillion digits, computed on a commodity desktop PC using Alexander Yee\'s y-cruncher software. The era of supercomputer exclusivity was over — a home computer could now hold the world record.',
+    era: 'supercomputer',
+    badges: ['record'],
+    icon: '🏠'
+  },
+  {
+    digits: 31415926535897,
+    year: 'Mar 14, 2019',
+    who: 'Emma Haruka Iwao (Google Cloud)',
+    note: 'Google engineer Emma Haruka Iwao computed 31,415,926,535,897 digits — exactly π × 10¹³ — on Google Cloud infrastructure over 121 days. Announced on Pi Day 2019.',
+    era: 'supercomputer',
+    badges: ['record'],
+    icon: '☁️'
+  },
+  {
+    digits: 100000000000000,
+    year: 'Mar 21, 2022',
+    who: 'Emma Haruka Iwao (Google Cloud)',
+    note: '100 trillion digits — the first computation to reach this milestone, taking 158 days on Google Cloud. Announced on the first day of spring 2022.',
+    era: 'supercomputer',
+    badges: ['record'],
+    icon: '☁️'
+  },
+  {
+    digits: 314000000000000,
+    year: 'Nov 23, 2025',
+    who: 'Kevin O\'Brien, Divyansh Jain & Brian Beeler',
+    note: '314 trillion digits — the current world record as of 2025, computed in 110 days using y-cruncher on AMD EPYC processors. The number of digits itself begins with 3.14... — a fitting tribute to the constant.',
+    era: 'supercomputer',
+    badges: ['record'],
+    icon: '🌍'
+  }
+];
+
+// State
+let piTimelineInitialized = false;
+let piTimelineLastUnlocked = -1;
+let piTlCurrentIndex = 0;  // which milestone card is currently shown
+let piTlUnlockedCount = 0; // how many are unlocked
+
+// Era color map
+const ERA_COLORS = {
+  ancient: '#c8a84b',
+  medieval: '#7ec8a0',
+  earlymodern: '#e08060',
+  modern: '#a070d0',
+  computer: '#50b8e8',
+  supercomputer: '#f06090'
+};
+
+function piTlFormatDigits(n) {
+  if (n >= 1e12) return (n / 1e12).toFixed(n % 1e12 === 0 ? 0 : 3) + ' trillion';
+  if (n >= 1e9)  return (n / 1e9).toFixed(n % 1e9 === 0 ? 0 : 3) + ' billion';
+  if (n >= 1e6)  return (n / 1e6).toFixed(n % 1e6 === 0 ? 0 : 3) + ' million';
+  return n.toLocaleString();
+}
+
+function piTlRenderCard(index, flash) {
+  const card = document.getElementById('piTlCard');
+  if (!card) return;
+
+  const m = PI_MILESTONES[index];
+  const isUnlocked = index < piTlUnlockedCount;
+
+  if (!isUnlocked) {
+    card.style.setProperty('--era-color', 'rgba(100,160,255,0.2)');
+    card.innerHTML = `<div class="pi-tl-card-locked">🔒 Unlock at ${piTlFormatDigits(m.digits)} digits — keep generating!</div>`;
+    card.classList.remove('just-unlocked');
+    return;
+  }
+
+  const eraKey = m.era.replace(/-/g,'').replace(/ /g,'').toLowerCase();
+  const eraColor = ERA_COLORS[eraKey] || '#7ec8ff';
+  card.style.setProperty('--era-color', eraColor);
+
+  const badgeLabels = { record: 'World Record', first: 'First Ever', computer: 'Electronic Computer', proof: 'Mathematical Proof' };
+  const badgesHtml = (m.badges || []).map(b =>
+    `<span class="pi-tl-badge pi-tl-badge-${b}">${badgeLabels[b] || b}</span>`
+  ).join('');
+
+  card.innerHTML = `
+    <div class="pi-tl-card-top">
+      <span class="pi-tl-card-emoji">${m.icon}</span>
+      <span class="pi-tl-card-digits">${piTlFormatDigits(m.digits)} digits</span>
+      <span class="pi-tl-card-year">${m.year}</span>
+      <span class="pi-tl-card-badges">${badgesHtml}</span>
+    </div>
+    <div class="pi-tl-card-who">${m.who}</div>
+    <div class="pi-tl-card-note">${m.note}</div>`;
+
+  if (flash) {
+    card.classList.remove('just-unlocked');
+    void card.offsetWidth; // force reflow
+    card.classList.add('just-unlocked');
+    setTimeout(() => card.classList.remove('just-unlocked'), 1300);
+  }
+}
+
+function piTlRenderDots() {
+  const dotsEl = document.getElementById('piTlDots');
+  if (!dotsEl) return;
+  dotsEl.innerHTML = PI_MILESTONES.map((m, i) => {
+    let cls = 'pi-tl-dot';
+    if (i < piTlUnlockedCount) cls += ' unlocked';
+    else cls += ' locked-dot';
+    if (i === piTlCurrentIndex) cls += ' active';
+    return `<span class="${cls}" onclick="piTimelineGoTo(${i})" title="${m.who} (${m.year})"></span>`;
+  }).join('');
+}
+
+function piTlUpdateNav() {
+  const prev = document.getElementById('piTlPrevBtn');
+  const next = document.getElementById('piTlNextBtn');
+  if (prev) prev.disabled = piTlCurrentIndex <= 0;
+  if (next) next.disabled = piTlCurrentIndex >= PI_MILESTONES.length - 1;
+}
+
+function piTimelineNav(dir) {
+  const newIdx = piTlCurrentIndex + dir;
+  if (newIdx < 0 || newIdx >= PI_MILESTONES.length) return;
+  piTlCurrentIndex = newIdx;
+  piTlRenderCard(piTlCurrentIndex, false);
+  piTlRenderDots();
+  piTlUpdateNav();
+}
+
+function piTimelineGoTo(idx) {
+  piTlCurrentIndex = idx;
+  piTlRenderCard(piTlCurrentIndex, false);
+  piTlRenderDots();
+  piTlUpdateNav();
+}
+
+function initPiTimeline() {
+  const panel = document.getElementById('piTimelinePanel');
+  if (!panel) return;
+  piTlCurrentIndex = 0;
+  piTlUnlockedCount = 0;
+  document.getElementById('piTimelineTotalCount').textContent = PI_MILESTONES.length;
+  document.getElementById('piTimelineUnlockedCount').textContent = '0';
+  document.getElementById('piTimelineProgressBar').style.width = '0%';
+  piTlRenderCard(0, false);
+  piTlRenderDots();
+  piTlUpdateNav();
+  piTimelineInitialized = true;
+  piTimelineLastUnlocked = -1;
+}
+
+function updatePiTimeline(digitCount) {
+  if (!piTimelineInitialized) return;
+  let newUnlockIdx = -1;
+  let count = 0;
+  PI_MILESTONES.forEach((m, i) => {
+    if (digitCount >= m.digits) {
+      count++;
+      if (i >= piTlUnlockedCount) newUnlockIdx = i; // newly unlocked
+    }
+  });
+  const prevCount = piTlUnlockedCount;
+  piTlUnlockedCount = count;
+
+  if (count !== prevCount) {
+    // New milestone(s) unlocked — jump to the latest one and flash it
+    if (newUnlockIdx >= 0) {
+      piTlCurrentIndex = newUnlockIdx;
+    }
+    document.getElementById('piTimelineUnlockedCount').textContent = count;
+    const pct = (count / PI_MILESTONES.length * 100).toFixed(1);
+    document.getElementById('piTimelineProgressBar').style.width = pct + '%';
+    piTlRenderCard(piTlCurrentIndex, true);
+    piTlRenderDots();
+    piTlUpdateNav();
+  }
+}
+
+function showPiTimeline() {
+  const panel = document.getElementById('piTimelinePanel');
+  if (!panel) return;
+  panel.style.display = 'block';
+  if (!piTimelineInitialized) initPiTimeline();
+  updatePiTimeline(currentDigitIndex);
+}
+function hidePiTimeline() {
+  const panel = document.getElementById('piTimelinePanel');
+  if (panel) panel.style.display = 'none';
+}
+function checkPiTimelineVisibility() {
+  const calcType = document.getElementById('calcType').value;
+  const base = parseInt(document.getElementById('baseSystem').value);
+  if (calcType === 'pi' && base === 10) {
+    showPiTimeline();
+  } else {
+    hidePiTimeline();
+  }
+}
+function resetPiTimeline() {
+  piTimelineInitialized = false;
+  piTimelineLastUnlocked = -1;
+  piTlCurrentIndex = 0;
+  piTlUnlockedCount = 0;
+  const card = document.getElementById('piTlCard');
+  if (card) card.innerHTML = '<div class="pi-tl-card-locked">🔒 Generate digits to unlock milestones</div>';
+  const dots = document.getElementById('piTlDots');
+  if (dots) dots.innerHTML = '';
+  const countEl = document.getElementById('piTimelineUnlockedCount');
+  if (countEl) countEl.textContent = '0';
+  const bar = document.getElementById('piTimelineProgressBar');
+  if (bar) bar.style.width = '0%';
+  hidePiTimeline();
+}
+

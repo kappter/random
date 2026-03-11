@@ -139,6 +139,34 @@
             </div>
         </div>
 
+        <!-- Pi Day Historical Timeline Panel (compact single-card module) -->
+        <div id="piTimelinePanel" class="pi-tl-panel" style="display:none;">
+            <div class="pi-tl-header">
+                <span class="pi-tl-icon">π</span>
+                <div class="pi-tl-title-block">
+                    <span class="pi-tl-title">The Human Quest for Pi</span>
+                    <span class="pi-tl-subtitle">Each digit echoes thousands of years of history</span>
+                </div>
+                <div class="pi-tl-counter">
+                    <span id="piTimelineUnlockedCount" class="pi-tl-count-num">0</span>
+                    <span class="pi-tl-count-sep">/</span>
+                    <span id="piTimelineTotalCount" class="pi-tl-count-total">26</span>
+                    <span class="pi-tl-count-label">unlocked</span>
+                </div>
+            </div>
+            <div class="pi-tl-progress-wrap">
+                <div id="piTimelineProgressBar" class="pi-tl-progress-bar" style="width:0%"></div>
+            </div>
+            <div class="pi-tl-viewer">
+                <button class="pi-tl-nav" id="piTlPrevBtn" onclick="piTimelineNav(-1)" title="Previous">&#8249;</button>
+                <div id="piTlCard" class="pi-tl-card">
+                    <div class="pi-tl-card-locked">🔒 Generate digits to unlock milestones</div>
+                </div>
+                <button class="pi-tl-nav" id="piTlNextBtn" onclick="piTimelineNav(1)" title="Next">&#8250;</button>
+            </div>
+            <div id="piTlDots" class="pi-tl-dots"></div>
+        </div>
+
         <!-- Benford's Law Analysis Panel -->
         <div id="benfordPanel" class="benford-panel" style="display:none;">
 
