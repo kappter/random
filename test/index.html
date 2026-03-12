@@ -455,6 +455,102 @@
         </div>
     </div>
 
+    <!-- Worksheet Generator Modal -->
+    <div id="worksheetModal" class="ws-modal" style="display:none;">
+        <div class="ws-modal-overlay" onclick="closeWorksheetModal()"></div>
+        <div class="ws-modal-box">
+            <div class="ws-modal-header">
+                <span class="ws-modal-icon">📄</span>
+                <div>
+                    <h2 class="ws-modal-title">Worksheet Generator</h2>
+                    <p class="ws-modal-subtitle">Create a printable student worksheet with a QR-coded answer key</p>
+                </div>
+                <button class="ws-modal-close" onclick="closeWorksheetModal()">✕</button>
+            </div>
+
+            <div class="ws-form">
+                <!-- Row 1: Focus Area -->
+                <div class="ws-form-group">
+                    <label class="ws-label">Focus Area</label>
+                    <div class="ws-focus-grid" id="wsFocusGrid">
+                        <button class="ws-focus-btn active" data-focus="pi-day" onclick="wsSelectFocus(this)">
+                            <span class="ws-focus-icon">π</span>
+                            <span class="ws-focus-name">Pi Day Explorer</span>
+                        </button>
+                        <button class="ws-focus-btn" data-focus="number-bases" onclick="wsSelectFocus(this)">
+                            <span class="ws-focus-icon">🔢</span>
+                            <span class="ws-focus-name">Number Bases</span>
+                        </button>
+                        <button class="ws-focus-btn" data-focus="randomness-prngs" onclick="wsSelectFocus(this)">
+                            <span class="ws-focus-icon">🎲</span>
+                            <span class="ws-focus-name">Randomness &amp; PRNGs</span>
+                        </button>
+                        <button class="ws-focus-btn" data-focus="benford" onclick="wsSelectFocus(this)">
+                            <span class="ws-focus-icon">📊</span>
+                            <span class="ws-focus-name">Benford's Law</span>
+                        </button>
+                        <button class="ws-focus-btn" data-focus="ulam-spiral" onclick="wsSelectFocus(this)">
+                            <span class="ws-focus-icon">🌀</span>
+                            <span class="ws-focus-name">Ulam Spiral</span>
+                        </button>
+                        <button class="ws-focus-btn" data-focus="mixed" onclick="wsSelectFocus(this)">
+                            <span class="ws-focus-icon">🎯</span>
+                            <span class="ws-focus-name">Mixed Sampler</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Row 2: Grade Level + Question Count -->
+                <div class="ws-form-row">
+                    <div class="ws-form-group">
+                        <label class="ws-label">Grade Level</label>
+                        <div class="ws-btn-group" id="wsGradeGroup">
+                            <button class="ws-opt-btn active" data-grade="middle-school" onclick="wsSelectOpt(this, 'wsGradeGroup')">Middle School</button>
+                            <button class="ws-opt-btn" data-grade="high-school" onclick="wsSelectOpt(this, 'wsGradeGroup')">High School</button>
+                            <button class="ws-opt-btn" data-grade="college" onclick="wsSelectOpt(this, 'wsGradeGroup')">College</button>
+                        </div>
+                    </div>
+                    <div class="ws-form-group">
+                        <label class="ws-label">Number of Questions</label>
+                        <div class="ws-btn-group" id="wsQCountGroup">
+                            <button class="ws-opt-btn active" data-qcount="5" onclick="wsSelectOpt(this, 'wsQCountGroup')">5</button>
+                            <button class="ws-opt-btn" data-qcount="8" onclick="wsSelectOpt(this, 'wsQCountGroup')">8</button>
+                            <button class="ws-opt-btn" data-qcount="10" onclick="wsSelectOpt(this, 'wsQCountGroup')">10</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Options -->
+                <div class="ws-form-row">
+                    <div class="ws-form-group">
+                        <label class="ws-label">Include</label>
+                        <div class="ws-checkbox-group">
+                            <label class="ws-check"><input type="checkbox" id="wsIncludeHeader" checked> Student name / date / class fields</label>
+                            <label class="ws-check"><input type="checkbox" id="wsIncludeAnswerLines" checked> Answer lines below each question</label>
+                            <label class="ws-check"><input type="checkbox" id="wsIncludeHandsOn" checked> Hands-on app activity questions</label>
+                            <label class="ws-check"><input type="checkbox" id="wsIncludeQR" checked> QR code linking to answer key</label>
+                        </div>
+                    </div>
+                    <div class="ws-form-group">
+                        <label class="ws-label">Worksheet Title (optional)</label>
+                        <input type="text" id="wsCustomTitle" class="ws-text-input" placeholder="e.g. Pi Day Activity — March 14">
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <div class="ws-generate-row">
+                    <button class="ws-generate-btn" onclick="generateWorksheet()">📄 Generate &amp; Preview Worksheet</button>
+                    <span class="ws-generate-hint">Opens a print-ready page in a new tab</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Worksheet button in top-right (alongside dark mode toggle) -->
+    <button class="worksheet-launch-btn" id="worksheetLaunchBtn" onclick="openWorksheetModal()">📄 Worksheets</button>
+
+    <script src="worksheet-questions.js"></script>
+    <script src="worksheet-generator.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

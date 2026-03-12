@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Answer Key — Live Random Calculator Worksheets</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', serif;
+      font-size: 11pt;
+      color: #1a1a1a;
+      background: #f4f6fb;
+      min-height: 100vh;
+    }
+    .ak-page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 28px 36px 40px;
+      background: #fff;
+      min-height: 100vh;
+      box-shadow: 0 0 30px rgba(0,0,0,0.08);
+    }
+
+    /* Header */
+    .ak-header {
+      border-bottom: 3px solid #2c3e8c;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .ak-logo {
+      font-size: 2.2rem;
+      color: #2c3e8c;
+      line-height: 1;
+    }
+    .ak-title { font-size: 1.4rem; font-weight: bold; color: #1a1a1a; }
+    .ak-subtitle { font-size: 0.82rem; color: #666; margin-top: 3px; }
+    .ak-badge {
+      display: inline-block;
+      background: #2c3e8c;
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 4px;
+    }
+    .ak-badge.grade { background: #27ae60; }
+
+    /* Teacher notice */
+    .ak-teacher-notice {
+      background: #fff8e1;
+      border-left: 4px solid #f0c040;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: #555;
+      margin-bottom: 20px;
+      border-radius: 0 6px 6px 0;
+      line-height: 1.5;
+    }
+
+    /* Answer cards */
+    .ak-answer {
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      border: 1px solid #e0e4f0;
+      border-radius: 8px;
+      background: #fafbff;
+      page-break-inside: avoid;
+    }
+    .ak-answer-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .ak-q-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      background: #2c3e8c;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: bold;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ak-q-text {
+      font-size: 0.88rem;
+      color: #444;
+      font-style: italic;
+      flex: 1;
+    }
+    .ak-q-type {
+      font-size: 0.68rem;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .ak-answer-box {
+      background: #e8f5e9;
+      border-left: 4px solid #27ae60;
+      border-radius: 0 6px 6px 0;
+      padding: 8px 12px;
+      font-size: 0.92rem;
+      color: #1b5e20;
+      line-height: 1.5;
+    }
+    .ak-answer-box.mcq { background: #e3f2fd; border-left-color: #1565c0; color: #0d47a1; }
+    .ak-answer-box.fill { background: #f3e5f5; border-left-color: #6a1b9a; color: #4a148c; }
+    .ak-answer-box.hands-on { background: #fff3e0; border-left-color: #e65100; color: #bf360c; }
+
+    /* General guidance section */
+    .ak-general {
+      margin-top: 28px;
+      padding: 16px;
+      background: #f0f4ff;
+      border: 1px solid #c5d0f0;
+      border-radius: 8px;
+    }
+    .ak-general-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #2c3e8c;
+      margin-bottom: 10px;
+    }
+    .ak-general-item {
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      color: #333;
+      line-height: 1.5;
+    }
+    .ak-general-item strong { color: #2c3e8c; }
+
+    /* Footer */
+    .ak-footer {
+      margin-top: 28px;
+      padding-top: 10px;
+      border-top: 1px solid #dde;
+      font-size: 0.7rem;
+      color: #aaa;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .ak-page { box-shadow: none; padding: 18px 24px; }
+      .ak-no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="ak-page">
+
+  <div class="ak-header">
+    <span class="ak-logo">🗝️</span>
+    <div>
+      <div class="ak-title">Answer Key</div>
+      <div class="ak-subtitle">Live Random Calculator — Educational Worksheets</div>
+    </div>
+    <button class="ak-no-print" onclick="window.print()" style="margin-left:auto;padding:6px 14px;background:#2c3e8c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.85rem;">🖨️ Print</button>
+  </div>
+
+  <div class="ak-teacher-notice">
+    <strong>For Teachers:</strong> This answer key provides model answers and guidance notes for each question type. Hands-on activity answers (🔬) will vary by student — use the guidance notes to evaluate responses. Short-answer questions should be graded for conceptual accuracy, not exact wording.
+  </div>
+
+  <div id="akContent">
+    <!-- Answers injected by JS -->
+    <p style="color:#888;font-style:italic;text-align:center;padding:40px 0;">Loading answer key...</p>
+  </div>
+
+  <div class="ak-general">
+    <div class="ak-general-title">📚 General Grading Guidance</div>
+    <div class="ak-general-item"><strong>Multiple Choice:</strong> One correct answer only. Award full marks for the correct letter.</div>
+    <div class="ak-general-item"><strong>Fill in the Blank:</strong> Accept minor spelling variations. The key value or concept must be present.</div>
+    <div class="ak-general-item"><strong>Short Answer:</strong> Award marks for demonstrating understanding of the core concept. Exact wording is not required.</div>
+    <div class="ak-general-item"><strong>🔬 App Activities:</strong> Answers will vary based on the student's run. Evaluate whether the student correctly used the app and interpreted their results. Look for correct identification of patterns, values, or comparisons.</div>
+  </div>
+
+  <div class="ak-footer">
+    <span>Live Random Calculator — Answer Key</span>
+    <span id="akDateFooter"></span>
+  </div>
+
+</div>
+
+<script>
+// Inline the question bank data (will be loaded from URL params)
+// The question bank is defined in worksheet-questions.js — we re-embed a minimal version here
+// for standalone answer-key.html use.
+
+const FOCUS_NAMES = {
+  'pi-day': 'Pi Day Explorer',
+  'number-bases': 'Number Bases',
+  'randomness-prngs': 'Randomness & PRNGs',
+  'benford': "Benford's Law",
+  'ulam-spiral': 'Ulam Spiral',
+  'mixed': 'Mixed Sampler'
+};
+const GRADE_NAMES = {
+  'middle-school': 'Middle School',
+  'high-school': 'High School',
+  'college': 'College / University'
+};
+const TYPE_LABELS = {
+  'mcq': 'Multiple Choice',
+  'fill-in': 'Fill in the Blank',
+  'short-answer': 'Short Answer',
+  'hands-on': '🔬 App Activity'
+};
+
+// Minimal question bank embedded for standalone use
+const AK_QUESTION_BANK = {
+  "pi-day": {
+    "middle-school": [
+      { type:"mcq", question:"What is the definition of Pi (π)?", options:["The area of a circle","The ratio of a circle's circumference to its radius","The ratio of a circle's circumference to its diameter","A type of dessert"], answer:2 },
+      { type:"fill-in", question:"To two decimal places, the value of Pi is ____.", answer:"3.14" },
+      { type:"mcq", question:"Which ancient Greek mathematician was the first to rigorously calculate an approximation of Pi?", options:["Pythagoras","Euclid","Plato","Archimedes"], answer:3 },
+      { type:"hands-on", question:"Using the app, generate 100 digits of Pi. Which digit (0-9) appears the most frequently in your result?", answer:"(Varies) Student must run the app and record their observation." },
+      { type:"short-answer", question:"The app's timeline shows that ancient civilizations knew about Pi. Name one of them.", answer:"Ancient Egyptians or Babylonians." }
+    ],
+    "high-school": [
+      { type:"mcq", question:"A number that cannot be expressed as a simple fraction (a/b) is called...", options:["An integer","A rational number","An irrational number","A transcendental number"], answer:2 },
+      { type:"short-answer", question:"Is Pi a rational or irrational number? Explain what that means.", answer:"Pi is an irrational number, meaning its decimal representation goes on forever without repeating." },
+      { type:"mcq", question:"Who is credited with first using the Greek letter 'π' to represent the constant in 1706?", options:["Isaac Newton","Leonhard Euler","William Jones","Gottfried Leibniz"], answer:2 },
+      { type:"hands-on", question:"Using the app, generate 200 digits of Pi in Base 2 (Binary). Do the digits 0 and 1 appear roughly the same number of times? Record the counts.", answer:"(Varies) The counts should be close to equal, demonstrating normality." },
+      { type:"short-answer", question:"The app mentions that Pi is 'expected to be uniformly distributed'. What does this concept, also known as 'normality', mean?", answer:"It means that every digit and every sequence of digits is expected to appear with the same frequency. It has been conjectured but not yet proven for Pi." }
+    ],
+    "college": [
+      { type:"mcq", question:"Pi is not just irrational, it is also a...", options:["Transcendental number","Algebraic number","Complex number","Imaginary number"], answer:0 },
+      { type:"short-answer", question:"Explain the significance of Machin-like formulas in the history of calculating Pi.", answer:"They are rapidly converging series (based on the arctangent function) that were used to break Pi calculation records for centuries before the computer age." },
+      { type:"mcq", question:"The Chudnovsky algorithm, used for modern record-breaking calculations of Pi, is an example of what type of algorithm?", options:["A spigot algorithm","A Monte Carlo method","A rapidly converging series based on elliptic integrals","A Fourier analysis method"], answer:2 },
+      { type:"hands-on", question:"Using the app, run the Benford's Law analysis on a text file of the first 10,000 digits of Pi. Does it conform to Benford's Law? Explain why or why not.", answer:"(Varies) It should show non-conformance. While Pi's digits are uniform, the leading digits of numbers in a random sequence do not follow Benford's law, which applies to naturally occurring datasets." },
+      { type:"short-answer", question:"What is the 'spigot algorithm' for computing Pi, and how does it differ from methods that compute all digits up to a point?", answer:"A spigot algorithm can produce single digits of Pi without calculating all the preceding ones. It's like turning a tap (spigot) to get one drop (digit) at a time." }
+    ]
+  },
+  "number-bases": {
+    "middle-school": [
+      { type:"mcq", question:"Our everyday number system is Base-10, also called...", options:["Binary","Decimal","Hexadecimal","Octal"], answer:1 },
+      { type:"fill-in", question:"The number 101 in Base-2 (Binary) is equal to the number ____ in Base-10.", answer:"5" },
+      { type:"mcq", question:"Which base system uses only the digits 0 and 1?", options:["Base-10","Base-16","Base-2","Base-8"], answer:2 },
+      { type:"hands-on", question:"Using the app, set the base to 16 (Hexadecimal). What letters are used for the digits after 9?", answer:"A, B, C, D, E, F" },
+      { type:"short-answer", question:"Why do computers often use Base-2 (Binary)?", answer:"Because computer circuits have two states: on or off, which can be represented by 1 and 0." }
+    ],
+    "high-school": [
+      { type:"mcq", question:"What is the value of the number 2B in Base-16 (Hexadecimal) when converted to Base-10?", options:["33","43","211","42"], answer:3 },
+      { type:"fill-in", question:"The Base-10 number 20 is written as ____ in Base-8 (Octal).", answer:"24" },
+      { type:"mcq", question:"In the number 123 (Base-10), the '1' represents...", options:["1 x 10^0","1 x 10^1","1 x 10^2","1 x 10^3"], answer:2 },
+      { type:"hands-on", question:"Using the app, generate 100 digits using the LCG algorithm in Base-4. Look at the Ulam Spiral. Do you see any obvious patterns? Describe them.", answer:"(Varies) Student should observe and describe any visual patterns, which may indicate non-randomness in the LCG algorithm." },
+      { type:"short-answer", question:"Explain the concept of 'place value' and how it applies to a number system other than Base-10.", answer:"Place value means a digit's value depends on its position. In Base-8, the rightmost digit is the 8^0 (1s) place, the next is 8^1 (8s), then 8^2 (64s), etc." }
+    ],
+    "college": [
+      { type:"mcq", question:"To convert a number from Base-10 to another base 'b', you can use the method of...", options:["Repeated multiplication by b","Repeated division by b and recording the remainders","Taking the logarithm base b","Finding the Fourier transform"], answer:1 },
+      { type:"fill-in", question:"The fractional number 0.5 in Base-10 is written as ____ in Base-2.", answer:"0.1" },
+      { type:"mcq", question:"Why is Base-16 (Hexadecimal) commonly used in computer science as a more human-readable representation of binary data?", options:["It uses fewer digits than binary","Each hexadecimal digit corresponds to exactly four binary digits (a nibble)","It is easier for computers to process","It was invented by IBM"], answer:1 },
+      { type:"hands-on", question:"Using the app, generate 500 digits of the RANDU algorithm in Base-10. Now switch to the 'Pairs Heatmap' view. Describe the pattern you see and explain what it implies about the algorithm's quality.", answer:"(Varies) Student should see diagonal bands or clusters, indicating a strong serial correlation between consecutive numbers, a major flaw in RANDU." },
+      { type:"short-answer", question:"Discuss the trade-offs between using a small base (like 2) versus a large base (like 16) for representing numerical data in a computer system.", answer:"Small bases are simple for hardware but require long strings of digits. Large bases are more compact and human-readable but require more complex hardware/software to handle the larger set of symbols." }
+    ]
+  },
+  "randomness-prngs": {
+    "middle-school": [
+      { type:"mcq", question:"What does PRNG stand for?", options:["Pretty Random Number Generator","Pseudo-Random Number Generator","Perfectly Random Number Generator","Programmable Random Number Generator"], answer:1 },
+      { type:"short-answer", question:"What is the difference between a truly random number (like from a coin flip) and a pseudo-random number from a computer?", answer:"A truly random number is unpredictable. A pseudo-random number is generated by a formula and will eventually repeat, but it looks random." },
+      { type:"mcq", question:"In a PRNG, what is a 'seed'?", options:["The final number generated","The formula used","The starting value for the sequence","The length of the sequence"], answer:2 },
+      { type:"hands-on", question:"Using the app, run the Middle-Square algorithm for 100 digits. Watch the sequence. Does it ever get stuck in a short loop? Describe what happens.", answer:"(Varies) Yes, the Middle-Square method often degenerates into a short repeating cycle, like getting stuck on 0000." },
+      { type:"fill-in", question:"A good random number generator should produce numbers that are ____ distributed.", answer:"uniformly" }
+    ],
+    "high-school": [
+      { type:"mcq", question:"What is the 'period' of a PRNG?", options:["The time it takes to generate one number","The number of digits it can produce","The length of the sequence before it starts repeating","The initial seed value"], answer:2 },
+      { type:"short-answer", question:"The app includes the RANDU algorithm and marks it with a warning. Why was RANDU considered a bad PRNG?", answer:"Its numbers were not truly independent. When plotted in 3D, they fall on a small number of planes, a major flaw for scientific simulations." },
+      { type:"mcq", question:"Which of these is a common statistical test for randomness, mentioned in the app?", options:["The Turing Test","The Chi-Square Test","The Litmus Test","The Stress Test"], answer:1 },
+      { type:"hands-on", question:"Using the app, compare the 'Pairs Heatmap' for 1000 digits of LCG vs. PCG. Which one looks more uniform (less structured)? What does this tell you?", answer:"(Varies) The PCG heatmap should look more uniform (lower CV score), indicating it has better statistical properties and less correlation between consecutive numbers than a simple LCG." },
+      { type:"short-answer", question:"Why is cryptographic security an important consideration for PRNGs used in applications like online banking?", answer:"If a PRNG is predictable, an attacker could guess the 'random' numbers used to create encryption keys, passwords, or session tokens, compromising security." }
+    ],
+    "college": [
+      { type:"mcq", question:"The Linear Congruential Generator (LCG) is defined by the recurrence relation X_n+1 = (a * X_n + c) mod m. What is 'm' called?", options:["The multiplier","The increment","The modulus","The seed"], answer:2 },
+      { type:"short-answer", question:"Explain the concept of 'spectral tests' for evaluating the quality of a PRNG.", answer:"Spectral tests measure the uniformity of PRNG outputs by checking how points fall on k-dimensional hyperplanes. A bad generator like RANDU fails this test badly, showing points clustered on a few planes." },
+      { type:"mcq", question:"The PCG (Permuted Congruential Generator) family improves upon LCGs by adding what main feature?", options:["A larger modulus","A non-linear output transformation (permutation function)","A floating-point calculation","A connection to the internet for true randomness"], answer:1 },
+      { type:"hands-on", question:"Using the app, find the Chi-Square value for 1000 digits of Pi (Base 10) and 1000 digits of RANDU (Base 10). Which is lower, and what does a lower Chi-Square value generally signify?", answer:"(Varies) The value for Pi should be lower. A lower Chi-Square value signifies that the observed distribution is closer to the expected uniform distribution, indicating better statistical randomness." },
+      { type:"short-answer", question:"What are the Hull-Dobell conditions for a Linear Congruential Generator to achieve its maximum possible period length of 'm'?", answer:"1. 'c' and 'm' are relatively prime. 2. 'a-1' is divisible by every prime factor of 'm'. 3. 'a-1' is a multiple of 4 if 'm' is a multiple of 4." }
+    ]
+  }
+};
+
+// Parse URL params and render answer key
+function renderAnswerKey() {
+  const params = new URLSearchParams(window.location.search);
+  const focus = params.get('focus') || 'pi-day';
+  const grade = params.get('grade') || 'high-school';
+
+  const focusName = FOCUS_NAMES[focus] || focus;
+  const gradeName = GRADE_NAMES[grade] || grade;
+
+  // Update page title
+  document.title = `Answer Key — ${focusName} (${gradeName})`;
+
+  // Update header badges
+  const header = document.querySelector('.ak-subtitle');
+  if (header) header.textContent = `${focusName} · ${gradeName}`;
+
+  // Get questions for this focus/grade
+  let questions = [];
+  if (focus === 'mixed') {
+    Object.keys(AK_QUESTION_BANK).forEach(topic => {
+      const pool = AK_QUESTION_BANK[topic][grade] || AK_QUESTION_BANK[topic]['high-school'] || [];
+      if (pool.length > 0) questions.push(pool[0]);
+    });
+  } else {
+    questions = AK_QUESTION_BANK[focus]
+      ? (AK_QUESTION_BANK[focus][grade] || AK_QUESTION_BANK[focus]['high-school'] || [])
+      : [];
+  }
+
+  const letters = ['A', 'B', 'C', 'D'];
+  const content = document.getElementById('akContent');
+  if (!content) return;
+
+  if (questions.length === 0) {
+    content.innerHTML = `<p style="color:#888;text-align:center;padding:40px 0;">No answers available for this configuration. Please check the URL parameters.</p>`;
+    return;
+  }
+
+  let html = `<div style="margin-bottom:12px;">
+    <span style="display:inline-block;background:#2c3e8c;color:#fff;font-size:0.68rem;font-weight:bold;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:0.05em;margin-right:4px;">${focusName}</span>
+    <span style="display:inline-block;background:#27ae60;color:#fff;font-size:0.68rem;font-weight:bold;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:0.05em;">${gradeName}</span>
+  </div>`;
+
+  questions.forEach((q, i) => {
+    const typeLabel = TYPE_LABELS[q.type] || q.type;
+    let answerClass = '';
+    let answerText = '';
+
+    if (q.type === 'mcq') {
+      answerClass = 'mcq';
+      const correctLetter = letters[q.answer] || '?';
+      const correctText = q.options ? q.options[q.answer] : '';
+      answerText = `<strong>${correctLetter}. ${correctText}</strong>`;
+    } else if (q.type === 'fill-in') {
+      answerClass = 'fill';
+      answerText = `<strong>${q.answer}</strong>`;
+    } else if (q.type === 'hands-on') {
+      answerClass = 'hands-on';
+      answerText = q.answer;
+    } else {
+      answerText = q.answer;
+    }
+
+    html += `
+      <div class="ak-answer">
+        <div class="ak-answer-header">
+          <span class="ak-q-num">${i + 1}</span>
+          <span class="ak-q-text">${q.question}</span>
+          <span class="ak-q-type">${typeLabel}</span>
+        </div>
+        <div class="ak-answer-box ${answerClass}">${answerText}</div>
+      </div>`;
+  });
+
+  content.innerHTML = html;
+
+  // Footer date
+  const footerDate = document.getElementById('akDateFooter');
+  if (footerDate) footerDate.textContent = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+}
+
+renderAnswerKey();
+</script>
+</body>
+</html>
