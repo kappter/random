@@ -432,6 +432,83 @@ function generateWorksheet() {
     /* Divider between questions */
     .ws-question + .ws-question { border-top: 1px dashed #e0e0e0; padding-top: 16px; }
 
+    /* How to Use the App section */
+    .ws-howto {
+      border: 2px solid #2c3e8c;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+    .ws-howto-header {
+      background: #2c3e8c;
+      color: #fff;
+      padding: 7px 14px;
+      font-size: 0.88rem;
+      font-weight: bold;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ws-howto-body {
+      padding: 12px 14px 10px;
+      background: #f4f6fb;
+    }
+    .ws-howto-steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 16px;
+      margin-bottom: 10px;
+    }
+    .ws-howto-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .ws-howto-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      background: #2c3e8c;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: bold;
+      border-radius: 50%;
+    }
+    .ws-howto-step-text {
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: #222;
+    }
+    .ws-howto-step-text strong { color: #2c3e8c; }
+    .ws-howto-views {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+    .ws-howto-view-chip {
+      background: #e8ecf8;
+      border: 1px solid #b0bce8;
+      border-radius: 12px;
+      padding: 2px 9px;
+      font-size: 0.75rem;
+      color: #2c3e8c;
+      font-weight: bold;
+    }
+    .ws-howto-note {
+      background: #fff3cd;
+      border-left: 3px solid #f0c040;
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      color: #555;
+      border-radius: 0 4px 4px 0;
+    }
+
     @media print {
       body { padding: 0; }
       .ws-page { padding: 18px 24px; }
@@ -461,6 +538,48 @@ function generateWorksheet() {
 
   <div class="ws-instructions">
     <strong>Instructions:</strong> Answer all questions below. For hands-on activities (🔬), use the Live Random Calculator app at <em>your teacher's provided link</em>. Scan the QR code at the bottom to access the answer key.
+  </div>
+
+  <!-- How to Use the App -->
+  <div class="ws-howto">
+    <div class="ws-howto-header">🖥️ &nbsp;How to Use the Live Random Calculator App</div>
+    <div class="ws-howto-body">
+      <div class="ws-howto-steps">
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">1</span>
+          <div class="ws-howto-step-text"><strong>Open the app</strong> using your teacher's link or the QR code below. It runs in any web browser — no install needed.</div>
+        </div>
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">2</span>
+          <div class="ws-howto-step-text"><strong>Choose a Number Base</strong> (2–16) in the top field. Start with <strong>Base 10</strong> (Decimal) if unsure. Click <strong>Apply Base</strong>.</div>
+        </div>
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">3</span>
+          <div class="ws-howto-step-text"><strong>Select an Algorithm</strong> from the dropdown — try <strong>Pi Digits</strong>, <strong>LCG</strong>, or <strong>RANDU</strong> to compare how different generators behave.</div>
+        </div>
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">4</span>
+          <div class="ws-howto-step-text"><strong>Set the digit count</strong> (100–10,000) and adjust the <strong>Generation Speed</strong> slider. Slower speeds let you watch digits appear one by one.</div>
+        </div>
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">5</span>
+          <div class="ws-howto-step-text"><strong>Click Calculate</strong> to start generating. Watch the live chart update in real time. Use <strong>Pause</strong> to stop and <strong>Reset</strong> to start over.</div>
+        </div>
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">6</span>
+          <div class="ws-howto-step-text"><strong>Switch chart views</strong> using the buttons below the chart to explore different visualizations of the same data.</div>
+        </div>
+      </div>
+      <div style="font-size:0.78rem;font-weight:bold;color:#444;margin-bottom:5px;">📊 Available Chart Views:</div>
+      <div class="ws-howto-views">
+        <span class="ws-howto-view-chip">📈 Time Series</span>
+        <span class="ws-howto-view-chip">🎯 Radial</span>
+        <span class="ws-howto-view-chip">🌀 Ulam Spiral</span>
+        <span class="ws-howto-view-chip">🔥 Pairs Heatmap</span>
+        <span class="ws-howto-view-chip">👑 Lead Time</span>
+      </div>
+      <div class="ws-howto-note">🔬 <strong>App Activity questions</strong> on this worksheet require you to run the app and record what you observe. There are no single "correct" answers — your observations are the answer!</div>
+    </div>
   </div>
 
   <!-- Questions -->
