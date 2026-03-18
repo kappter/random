@@ -8,6 +8,8 @@
 function openWorksheetModal() {
   document.getElementById('worksheetModal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
+  // Update count buttons based on current focus/grade selection
+  setTimeout(wsUpdateCountButtons, 50);
 }
 function closeWorksheetModal() {
   document.getElementById('worksheetModal').style.display = 'none';
@@ -15,13 +17,69 @@ function closeWorksheetModal() {
 }
 
 // ── Focus / Option Button Selection ─────────────
+function wsUpdateCountButtons() {
+  // Dynamically enable/disable count buttons based on available questions for current focus+grade
+  const focusBtn = document.querySelector('#wsFocusGrid .ws-focus-btn.active');
+  const gradeBtn = document.querySelector('#wsGradeGroup .ws-opt-btn.active');
+  if (!focusBtn || !gradeBtn || typeof QUESTION_BANK === 'undefined') return;
+
+  const focus = focusBtn.dataset.focus;
+  const grade = gradeBtn.dataset.grade;
+  let maxQ = 0;
+
+  if (focus === 'mixed') {
+    // Mixed: one from each topic = number of topics
+    maxQ = Object.keys(QUESTION_BANK).length;
+  } else {
+    const pool = QUESTION_BANK[focus]
+      ? (QUESTION_BANK[focus][grade] || QUESTION_BANK[focus]['high-school'] || [])
+      : [];
+    maxQ = pool.length;
+  }
+
+  const countBtns = document.querySelectorAll('#wsQCountGroup .ws-opt-btn');
+  let hasActive = false;
+  countBtns.forEach(b => {
+    const n = parseInt(b.dataset.qcount);
+    if (n > maxQ) {
+      b.disabled = true;
+      b.style.opacity = '0.35';
+      b.style.cursor = 'not-allowed';
+      b.classList.remove('active');
+    } else {
+      b.disabled = false;
+      b.style.opacity = '';
+      b.style.cursor = '';
+      if (b.classList.contains('active')) hasActive = true;
+    }
+  });
+  // If active button was disabled, select the highest available
+  if (!hasActive) {
+    let best = null;
+    countBtns.forEach(b => { if (!b.disabled) best = b; });
+    if (best) best.classList.add('active');
+  }
+
+  // Show max available note
+  let note = document.getElementById('wsQCountNote');
+  if (!note) {
+    note = document.createElement('div');
+    note.id = 'wsQCountNote';
+    note.style.cssText = 'font-size:0.72rem;color:#aaa;margin-top:4px;';
+    document.getElementById('wsQCountGroup').after(note);
+  }
+  note.textContent = `${maxQ} questions available for this selection`;
+}
+
 function wsSelectFocus(btn) {
   document.querySelectorAll('#wsFocusGrid .ws-focus-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  wsUpdateCountButtons();
 }
 function wsSelectOpt(btn, groupId) {
   document.querySelectorAll(`#${groupId} .ws-opt-btn`).forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  if (groupId === 'wsGradeGroup') wsUpdateCountButtons();
 }
 
 // ── Get Current Selections ───────────────────────
@@ -41,7 +99,7 @@ function wsGetSelections() {
   };
 }
 
-// ── Fisher-Yates Shuffle ─────────────────────────
+// ── Fisher-Yates Shuffle (index-aware) ──────────
 function wsShuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -51,24 +109,27 @@ function wsShuffle(arr) {
   return a;
 }
 
-// ── Pick Questions ───────────────────────────────
+// ── Pick Questions (returns {question, bankIndex}) ──
 function wsPickQuestions(focus, grade, count, includeHandsOn) {
-  let pool = [];
+  let pool = []; // each entry: { q: questionObj, bankIndex: number, topic: string }
 
   if (focus === 'mixed') {
-    // One from each available topic
     const topics = Object.keys(QUESTION_BANK);
     topics.forEach(topic => {
       const topicPool = (QUESTION_BANK[topic][grade] || QUESTION_BANK[topic]['high-school'] || []);
-      const filtered = includeHandsOn ? topicPool : topicPool.filter(q => q.type !== 'hands-on');
-      if (filtered.length > 0) pool.push(filtered[Math.floor(Math.random() * filtered.length)]);
+      const indexed = topicPool.map((q, i) => ({ q, bankIndex: i, topic }));
+      const filtered = includeHandsOn ? indexed : indexed.filter(e => e.q.type !== 'hands-on');
+      if (filtered.length > 0) {
+        pool.push(filtered[Math.floor(Math.random() * filtered.length)]);
+      }
     });
     pool = wsShuffle(pool);
   } else {
     const topicPool = QUESTION_BANK[focus]
       ? (QUESTION_BANK[focus][grade] || QUESTION_BANK[focus]['high-school'] || [])
       : [];
-    pool = includeHandsOn ? topicPool : topicPool.filter(q => q.type !== 'hands-on');
+    const indexed = topicPool.map((q, i) => ({ q, bankIndex: i, topic: focus }));
+    pool = includeHandsOn ? indexed : indexed.filter(e => e.q.type !== 'hands-on');
     pool = wsShuffle(pool);
   }
 
@@ -97,13 +158,14 @@ const TYPE_LABELS = {
 };
 
 // ── Build QR Code URL ────────────────────────────
-function wsEncodeAnswerKeyURL(focus, grade, questionIndices) {
-  // Encode the worksheet config into a URL param for the answer key page
+function wsEncodeAnswerKeyURL(focus, grade, questionIndices, questionTopics) {
+  // Encode focus, grade, actual bank indices, and topics (for mixed mode)
   const base = window.location.href.replace(/\/[^/]*$/, '/') + 'answer-key.html';
   const params = new URLSearchParams({
     focus,
     grade,
-    q: questionIndices.join(',')
+    q: questionIndices.join(','),
+    t: (questionTopics || []).join(',')
   });
   return `${base}?${params.toString()}`;
 }
@@ -165,16 +227,16 @@ function generateWorksheet() {
   const gradeName = GRADE_NAMES[sel.grade] || sel.grade;
   const title = sel.customTitle || `${focusName} Worksheet`;
 
-  // Build answer key URL (encode focus, grade, and question indices for future use)
-  const answerKeyURL = wsEncodeAnswerKeyURL(sel.focus, sel.grade, questions.map((_, i) => i));
+  // Build answer key URL — encode actual bank indices so answer key can look up exact questions
+  const answerKeyURL = wsEncodeAnswerKeyURL(sel.focus, sel.grade, questions.map(e => e.bankIndex), questions.map(e => e.topic || sel.focus));
 
   // Build QR code image URL using Google Charts API (free, no key needed)
   const qrURL = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(answerKeyURL)}`;
 
-  // Build questions HTML
+  // Build questions HTML (questions is now array of {q, bankIndex, topic})
   let questionsHTML = '';
-  questions.forEach((q, i) => {
-    questionsHTML += wsRenderQuestion(q, i, sel.includeAnswerLines);
+  questions.forEach((entry, i) => {
+    questionsHTML += wsRenderQuestion(entry.q, i, sel.includeAnswerLines);
   });
 
   // Build header fields
@@ -432,6 +494,83 @@ function generateWorksheet() {
     /* Divider between questions */
     .ws-question + .ws-question { border-top: 1px dashed #e0e0e0; padding-top: 16px; }
 
+    /* How to Use the App section */
+    .ws-howto {
+      border: 2px solid #2c3e8c;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+    .ws-howto-header {
+      background: #2c3e8c;
+      color: #fff;
+      padding: 7px 14px;
+      font-size: 0.88rem;
+      font-weight: bold;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ws-howto-body {
+      padding: 12px 14px 10px;
+      background: #f4f6fb;
+    }
+    .ws-howto-steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 16px;
+      margin-bottom: 10px;
+    }
+    .ws-howto-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .ws-howto-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      background: #2c3e8c;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: bold;
+      border-radius: 50%;
+    }
+    .ws-howto-step-text {
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: #222;
+    }
+    .ws-howto-step-text strong { color: #2c3e8c; }
+    .ws-howto-views {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+    .ws-howto-view-chip {
+      background: #e8ecf8;
+      border: 1px solid #b0bce8;
+      border-radius: 12px;
+      padding: 2px 9px;
+      font-size: 0.75rem;
+      color: #2c3e8c;
+      font-weight: bold;
+    }
+    .ws-howto-note {
+      background: #fff3cd;
+      border-left: 3px solid #f0c040;
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      color: #555;
+      border-radius: 0 4px 4px 0;
+    }
+
     @media print {
       body { padding: 0; }
       .ws-page { padding: 18px 24px; }
@@ -461,6 +600,48 @@ function generateWorksheet() {
 
   <div class="ws-instructions">
     <strong>Instructions:</strong> Answer all questions below. For hands-on activities (🔬), use the Live Random Calculator app at <em>your teacher's provided link</em>. Scan the QR code at the bottom to access the answer key.
+  </div>
+
+  <!-- How to Use the App -->
+  <div class="ws-howto">
+    <div class="ws-howto-header">🖥️ &nbsp;How to Use the Live Random Calculator App</div>
+    <div class="ws-howto-body">
+      <div class="ws-howto-steps">
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">1</span>
+          <div class="ws-howto-step-text"><strong>Open the app</strong> using your teacher's link or the QR code below. It runs in any web browser — no install needed.</div>
+        </div>
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">2</span>
+          <div class="ws-howto-step-text"><strong>Choose a Number Base</strong> (2–16) in the top field. Start with <strong>Base 10</strong> (Decimal) if unsure. Click <strong>Apply Base</strong>.</div>
+        </div>
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">3</span>
+          <div class="ws-howto-step-text"><strong>Select an Algorithm</strong> from the dropdown — try <strong>Pi Digits</strong>, <strong>LCG</strong>, or <strong>RANDU</strong> to compare how different generators behave.</div>
+        </div>
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">4</span>
+          <div class="ws-howto-step-text"><strong>Set the digit count</strong> (100–10,000) and adjust the <strong>Generation Speed</strong> slider. Slower speeds let you watch digits appear one by one.</div>
+        </div>
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">5</span>
+          <div class="ws-howto-step-text"><strong>Click Calculate</strong> to start generating. Watch the live chart update in real time. Use <strong>Pause</strong> to stop and <strong>Reset</strong> to start over.</div>
+        </div>
+        <div class="ws-howto-step">
+          <span class="ws-howto-num">6</span>
+          <div class="ws-howto-step-text"><strong>Switch chart views</strong> using the buttons below the chart to explore different visualizations of the same data.</div>
+        </div>
+      </div>
+      <div style="font-size:0.78rem;font-weight:bold;color:#444;margin-bottom:5px;">📊 Available Chart Views:</div>
+      <div class="ws-howto-views">
+        <span class="ws-howto-view-chip">📈 Time Series</span>
+        <span class="ws-howto-view-chip">🎯 Radial</span>
+        <span class="ws-howto-view-chip">🌀 Ulam Spiral</span>
+        <span class="ws-howto-view-chip">🔥 Pairs Heatmap</span>
+        <span class="ws-howto-view-chip">👑 Lead Time</span>
+      </div>
+      <div class="ws-howto-note">🔬 <strong>App Activity questions</strong> on this worksheet require you to run the app and record what you observe. There are no single "correct" answers — your observations are the answer!</div>
+    </div>
   </div>
 
   <!-- Questions -->

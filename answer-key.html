@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Answer Key — Live Random Calculator Worksheets</title>
+  <script src="worksheet-questions.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -194,9 +195,7 @@
 </div>
 
 <script>
-// Inline the question bank data (will be loaded from URL params)
-// The question bank is defined in worksheet-questions.js — we re-embed a minimal version here
-// for standalone answer-key.html use.
+// QUESTION_BANK is loaded from worksheet-questions.js (see <head>)
 
 const FOCUS_NAMES = {
   'pi-day': 'Pi Day Explorer',
@@ -218,7 +217,8 @@ const TYPE_LABELS = {
   'hands-on': '🔬 App Activity'
 };
 
-// Minimal question bank embedded for standalone use
+// AK_QUESTION_BANK is no longer used — we use QUESTION_BANK from worksheet-questions.js
+// Keeping this stub for backward compatibility with old QR codes
 const AK_QUESTION_BANK = {
   "pi-day": {
     "middle-school": [
@@ -291,33 +291,52 @@ const AK_QUESTION_BANK = {
   }
 };
 
-// Parse URL params and render answer key
+// Parse URL params and render answer key using full QUESTION_BANK
 function renderAnswerKey() {
   const params = new URLSearchParams(window.location.search);
   const focus = params.get('focus') || 'pi-day';
   const grade = params.get('grade') || 'high-school';
+  const qParam = params.get('q') || '';
+  const tParam = params.get('t') || '';
 
   const focusName = FOCUS_NAMES[focus] || focus;
   const gradeName = GRADE_NAMES[grade] || grade;
 
-  // Update page title
+  // Update page title and header
   document.title = `Answer Key — ${focusName} (${gradeName})`;
-
-  // Update header badges
   const header = document.querySelector('.ak-subtitle');
   if (header) header.textContent = `${focusName} · ${gradeName}`;
 
-  // Get questions for this focus/grade
+  // Parse question indices and topics from URL
+  const qIndices = qParam ? qParam.split(',').map(Number) : [];
+  const qTopics = tParam ? tParam.split(',') : [];
+
+  // Resolve questions from QUESTION_BANK using encoded indices
   let questions = [];
-  if (focus === 'mixed') {
-    Object.keys(AK_QUESTION_BANK).forEach(topic => {
-      const pool = AK_QUESTION_BANK[topic][grade] || AK_QUESTION_BANK[topic]['high-school'] || [];
-      if (pool.length > 0) questions.push(pool[0]);
+  const bank = (typeof QUESTION_BANK !== 'undefined') ? QUESTION_BANK : AK_QUESTION_BANK;
+
+  if (qIndices.length > 0) {
+    // New format: use actual bank indices + topics
+    qIndices.forEach((idx, pos) => {
+      const topic = qTopics[pos] || focus;
+      const gradeKey = grade;
+      const pool = bank[topic]
+        ? (bank[topic][gradeKey] || bank[topic]['high-school'] || [])
+        : [];
+      if (pool[idx]) questions.push(pool[idx]);
     });
   } else {
-    questions = AK_QUESTION_BANK[focus]
-      ? (AK_QUESTION_BANK[focus][grade] || AK_QUESTION_BANK[focus]['high-school'] || [])
-      : [];
+    // Fallback: show all questions for focus/grade (old QR codes)
+    if (focus === 'mixed') {
+      Object.keys(bank).forEach(topic => {
+        const pool = bank[topic][grade] || bank[topic]['high-school'] || [];
+        if (pool.length > 0) questions.push(pool[0]);
+      });
+    } else {
+      questions = bank[focus]
+        ? (bank[focus][grade] || bank[focus]['high-school'] || [])
+        : [];
+    }
   }
 
   const letters = ['A', 'B', 'C', 'D'];
@@ -325,13 +344,14 @@ function renderAnswerKey() {
   if (!content) return;
 
   if (questions.length === 0) {
-    content.innerHTML = `<p style="color:#888;text-align:center;padding:40px 0;">No answers available for this configuration. Please check the URL parameters.</p>`;
+    content.innerHTML = `<p style="color:#888;text-align:center;padding:40px 0;">No answers found. The QR code may be from an older worksheet — please regenerate the worksheet to get an updated answer key.</p>`;
     return;
   }
 
   let html = `<div style="margin-bottom:12px;">
     <span style="display:inline-block;background:#2c3e8c;color:#fff;font-size:0.68rem;font-weight:bold;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:0.05em;margin-right:4px;">${focusName}</span>
     <span style="display:inline-block;background:#27ae60;color:#fff;font-size:0.68rem;font-weight:bold;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:0.05em;">${gradeName}</span>
+    <span style="display:inline-block;background:#7f4fbf;color:#fff;font-size:0.68rem;font-weight:bold;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:0.05em;margin-left:4px;">${questions.length} Questions</span>
   </div>`;
 
   questions.forEach((q, i) => {
