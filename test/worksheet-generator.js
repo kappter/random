@@ -8,6 +8,8 @@
 function openWorksheetModal() {
   document.getElementById('worksheetModal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
+  // Update count buttons based on current focus/grade selection
+  setTimeout(wsUpdateCountButtons, 50);
 }
 function closeWorksheetModal() {
   document.getElementById('worksheetModal').style.display = 'none';
@@ -15,13 +17,69 @@ function closeWorksheetModal() {
 }
 
 // ── Focus / Option Button Selection ─────────────
+function wsUpdateCountButtons() {
+  // Dynamically enable/disable count buttons based on available questions for current focus+grade
+  const focusBtn = document.querySelector('#wsFocusGrid .ws-focus-btn.active');
+  const gradeBtn = document.querySelector('#wsGradeGroup .ws-opt-btn.active');
+  if (!focusBtn || !gradeBtn || typeof QUESTION_BANK === 'undefined') return;
+
+  const focus = focusBtn.dataset.focus;
+  const grade = gradeBtn.dataset.grade;
+  let maxQ = 0;
+
+  if (focus === 'mixed') {
+    // Mixed: one from each topic = number of topics
+    maxQ = Object.keys(QUESTION_BANK).length;
+  } else {
+    const pool = QUESTION_BANK[focus]
+      ? (QUESTION_BANK[focus][grade] || QUESTION_BANK[focus]['high-school'] || [])
+      : [];
+    maxQ = pool.length;
+  }
+
+  const countBtns = document.querySelectorAll('#wsQCountGroup .ws-opt-btn');
+  let hasActive = false;
+  countBtns.forEach(b => {
+    const n = parseInt(b.dataset.qcount);
+    if (n > maxQ) {
+      b.disabled = true;
+      b.style.opacity = '0.35';
+      b.style.cursor = 'not-allowed';
+      b.classList.remove('active');
+    } else {
+      b.disabled = false;
+      b.style.opacity = '';
+      b.style.cursor = '';
+      if (b.classList.contains('active')) hasActive = true;
+    }
+  });
+  // If active button was disabled, select the highest available
+  if (!hasActive) {
+    let best = null;
+    countBtns.forEach(b => { if (!b.disabled) best = b; });
+    if (best) best.classList.add('active');
+  }
+
+  // Show max available note
+  let note = document.getElementById('wsQCountNote');
+  if (!note) {
+    note = document.createElement('div');
+    note.id = 'wsQCountNote';
+    note.style.cssText = 'font-size:0.72rem;color:#aaa;margin-top:4px;';
+    document.getElementById('wsQCountGroup').after(note);
+  }
+  note.textContent = `${maxQ} questions available for this selection`;
+}
+
 function wsSelectFocus(btn) {
   document.querySelectorAll('#wsFocusGrid .ws-focus-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  wsUpdateCountButtons();
 }
 function wsSelectOpt(btn, groupId) {
   document.querySelectorAll(`#${groupId} .ws-opt-btn`).forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  if (groupId === 'wsGradeGroup') wsUpdateCountButtons();
 }
 
 // ── Get Current Selections ───────────────────────
@@ -41,7 +99,7 @@ function wsGetSelections() {
   };
 }
 
-// ── Fisher-Yates Shuffle ─────────────────────────
+// ── Fisher-Yates Shuffle (index-aware) ──────────
 function wsShuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -51,24 +109,27 @@ function wsShuffle(arr) {
   return a;
 }
 
-// ── Pick Questions ───────────────────────────────
+// ── Pick Questions (returns {question, bankIndex}) ──
 function wsPickQuestions(focus, grade, count, includeHandsOn) {
-  let pool = [];
+  let pool = []; // each entry: { q: questionObj, bankIndex: number, topic: string }
 
   if (focus === 'mixed') {
-    // One from each available topic
     const topics = Object.keys(QUESTION_BANK);
     topics.forEach(topic => {
       const topicPool = (QUESTION_BANK[topic][grade] || QUESTION_BANK[topic]['high-school'] || []);
-      const filtered = includeHandsOn ? topicPool : topicPool.filter(q => q.type !== 'hands-on');
-      if (filtered.length > 0) pool.push(filtered[Math.floor(Math.random() * filtered.length)]);
+      const indexed = topicPool.map((q, i) => ({ q, bankIndex: i, topic }));
+      const filtered = includeHandsOn ? indexed : indexed.filter(e => e.q.type !== 'hands-on');
+      if (filtered.length > 0) {
+        pool.push(filtered[Math.floor(Math.random() * filtered.length)]);
+      }
     });
     pool = wsShuffle(pool);
   } else {
     const topicPool = QUESTION_BANK[focus]
       ? (QUESTION_BANK[focus][grade] || QUESTION_BANK[focus]['high-school'] || [])
       : [];
-    pool = includeHandsOn ? topicPool : topicPool.filter(q => q.type !== 'hands-on');
+    const indexed = topicPool.map((q, i) => ({ q, bankIndex: i, topic: focus }));
+    pool = includeHandsOn ? indexed : indexed.filter(e => e.q.type !== 'hands-on');
     pool = wsShuffle(pool);
   }
 
@@ -97,13 +158,14 @@ const TYPE_LABELS = {
 };
 
 // ── Build QR Code URL ────────────────────────────
-function wsEncodeAnswerKeyURL(focus, grade, questionIndices) {
-  // Encode the worksheet config into a URL param for the answer key page
+function wsEncodeAnswerKeyURL(focus, grade, questionIndices, questionTopics) {
+  // Encode focus, grade, actual bank indices, and topics (for mixed mode)
   const base = window.location.href.replace(/\/[^/]*$/, '/') + 'answer-key.html';
   const params = new URLSearchParams({
     focus,
     grade,
-    q: questionIndices.join(',')
+    q: questionIndices.join(','),
+    t: (questionTopics || []).join(',')
   });
   return `${base}?${params.toString()}`;
 }
@@ -165,16 +227,16 @@ function generateWorksheet() {
   const gradeName = GRADE_NAMES[sel.grade] || sel.grade;
   const title = sel.customTitle || `${focusName} Worksheet`;
 
-  // Build answer key URL (encode focus, grade, and question indices for future use)
-  const answerKeyURL = wsEncodeAnswerKeyURL(sel.focus, sel.grade, questions.map((_, i) => i));
+  // Build answer key URL — encode actual bank indices so answer key can look up exact questions
+  const answerKeyURL = wsEncodeAnswerKeyURL(sel.focus, sel.grade, questions.map(e => e.bankIndex), questions.map(e => e.topic || sel.focus));
 
   // Build QR code image URL using Google Charts API (free, no key needed)
   const qrURL = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(answerKeyURL)}`;
 
-  // Build questions HTML
+  // Build questions HTML (questions is now array of {q, bankIndex, topic})
   let questionsHTML = '';
-  questions.forEach((q, i) => {
-    questionsHTML += wsRenderQuestion(q, i, sel.includeAnswerLines);
+  questions.forEach((entry, i) => {
+    questionsHTML += wsRenderQuestion(entry.q, i, sel.includeAnswerLines);
   });
 
   // Build header fields

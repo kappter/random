@@ -60,6 +60,17 @@ const QUESTION_BANK = {
         type: "short-answer",
         question: "What is the formula for the circumference of a circle using Pi?",
         answer: "C = 2πr (or C = πd), where r is the radius and d is the diameter."
+      },
+      {
+        type: "mcq",
+        question: "Approximately how many digits of Pi are needed for NASA to calculate spacecraft trajectories with extreme precision?",
+        options: ["3 digits", "15 digits", "1,000 digits", "1 million digits"],
+        answer: 1
+      },
+      {
+        type: "hands-on",
+        question: "Using the app, generate 50 digits of Pi. Switch to the Ulam Spiral view. Describe the color pattern you see — is any color noticeably dominant?",
+        answer: "(Varies) With only 50 digits, the pattern will be sparse. Students should observe roughly equal color distribution with some variation."
       }
     ],
     "high-school": [
@@ -105,6 +116,17 @@ const QUESTION_BANK = {
         type: "short-answer",
         question: "Explain why computing more digits of Pi is scientifically useful today.",
         answer: "It tests the limits of computing hardware and algorithms, verifies the correctness of new supercomputers, and advances research in number theory."
+      },
+      {
+        type: "mcq",
+        question: "The Pairs Heatmap in the app shows digit transitions. For Pi digits in Base 10, what pattern would you expect to see?",
+        options: ["Strong diagonal stripes", "A roughly uniform heatmap with no dominant transitions", "Only even digits following even digits", "Digit 3 always following digit 1"],
+        answer: 1
+      },
+      {
+        type: "short-answer",
+        question: "William Shanks spent 15 years computing 707 digits of Pi by hand, but 180 of them were wrong. What does this tell us about the importance of verification in mathematics?",
+        answer: "It shows that even dedicated human computation is error-prone. Verification and peer review are essential. Modern computers can verify billions of digits in seconds."
       }
     ],
     "college": [
@@ -155,6 +177,16 @@ const QUESTION_BANK = {
         type: "fill-in",
         question: "The current world record for digits of Pi (as of 2025) stands at approximately ____ trillion digits.",
         answer: "314"
+      },
+      {
+        type: "short-answer",
+        question: "The Chudnovsky algorithm converges at roughly 14 digits of Pi per term. Why is convergence rate important in choosing an algorithm for record-breaking calculations?",
+        answer: "Faster convergence means fewer iterations are needed to reach a target precision, dramatically reducing computation time and memory requirements at the trillion-digit scale."
+      },
+      {
+        type: "hands-on",
+        question: "Using the app, generate 500 digits of Pi in Base 16 (Hexadecimal). Use the Pairs Heatmap. Does any hexadecimal digit pair appear significantly more or less often than expected? Record the CV score.",
+        answer: "(Varies) The CV score should be low (under 30%), indicating a roughly uniform transition matrix consistent with Pi's conjectured normality in base 16."
       }
     ]
   },
@@ -206,6 +238,17 @@ const QUESTION_BANK = {
         type: "short-answer",
         question: "Convert the Base-10 number 8 to Base-2 (Binary). Show your work.",
         answer: "8 = 1×8 + 0×4 + 0×2 + 0×1 = 1000 in binary."
+      },
+      {
+        type: "mcq",
+        question: "What is the Base-10 value of the binary number 1010?",
+        options: ["8", "10", "12", "14"],
+        answer: 1
+      },
+      {
+        type: "hands-on",
+        question: "Using the app, switch to Base-2 and generate 100 digits. How many different digits appear in the sequence? What are they?",
+        answer: "(Varies) Only 2 digits appear: 0 and 1. This is because Base-2 (Binary) only uses two symbols."
       }
     ],
     "high-school": [
@@ -251,6 +294,17 @@ const QUESTION_BANK = {
         type: "short-answer",
         question: "Why is Base-16 (Hexadecimal) often used by programmers when working with binary data?",
         answer: "Each hex digit represents exactly 4 binary bits (a nibble), making it a compact, human-readable shorthand for binary values."
+      },
+      {
+        type: "mcq",
+        question: "The Base-10 number 255 is represented as which value in Base-16?",
+        options: ["EF", "FE", "FF", "F0"],
+        answer: 2
+      },
+      {
+        type: "short-answer",
+        question: "Using the app, generate 200 digits in Base-16 and Base-2. Compare the Radial (pie chart) view for both. Why does Base-2 have fewer slices?",
+        answer: "(Varies) Base-2 has only 2 slices (for digits 0 and 1), while Base-16 has 16 slices. The number of slices equals the base, since each base has that many possible digit values."
       }
     ],
     "college": [
@@ -301,6 +355,22 @@ const QUESTION_BANK = {
         type: "fill-in",
         question: "The number of digits required to represent a Base-10 number N in Base-b is approximately ____.",
         answer: "⌈log_b(N+1)⌉ or log_b(N) + 1"
+      },
+      {
+        type: "short-answer",
+        question: "Explain why 0.1 in Base-10 cannot be represented exactly in Base-2 floating point, and what practical consequence this has in programming.",
+        answer: "0.1 = 1/10 = 1/(2×5), and since 5 is not a factor of 2, it has no finite binary representation. This causes floating-point rounding errors (e.g., 0.1 + 0.2 ≠ 0.3 in most languages)."
+      },
+      {
+        type: "mcq",
+        question: "In the app, if you switch from Base-10 to Base-16 and run the same algorithm with the same seed, the digit sequence will be...",
+        options: [
+          "Identical, just labeled differently",
+          "Different, because the algorithm output is re-interpreted in a new base",
+          "Random, because changing the base reseeds the algorithm",
+          "All zeros"
+        ],
+        answer: 1
       }
     ]
   },
@@ -357,6 +427,17 @@ const QUESTION_BANK = {
         type: "fill-in",
         question: "The app shows the Chi-Square statistic. A value close to ____ means the digits are evenly distributed.",
         answer: "0 (or the expected value for the degrees of freedom)"
+      },
+      {
+        type: "mcq",
+        question: "Which view in the app is best for spotting if a PRNG has a bias toward certain digit-to-digit transitions?",
+        options: ["Time Series", "Radial", "Pairs Heatmap", "Lead Time"],
+        answer: 2
+      },
+      {
+        type: "hands-on",
+        question: "Run the Middle-Square algorithm for 200 digits. Then run Mersenne Twister for 200 digits. Compare the Lead Time charts. Which algorithm shows a more even distribution of lead times?",
+        answer: "(Varies) Mersenne Twister should show a more balanced Lead Time chart. Middle-Square often degenerates, causing one digit to dominate."
       }
     ],
     "high-school": [
@@ -407,6 +488,17 @@ const QUESTION_BANK = {
         type: "short-answer",
         question: "Explain what the 'Lead Time' chart in the app shows and what it tells you about a PRNG's quality.",
         answer: "It shows how long each digit held the lead in the running count. For a good PRNG, all digits should lead for roughly equal amounts of time, indicating no bias."
+      },
+      {
+        type: "mcq",
+        question: "If two different seeds produce the same PRNG output sequence, this is called a...",
+        options: ["Collision", "Seed overlap", "Cycle", "Degeneration"],
+        answer: 0
+      },
+      {
+        type: "short-answer",
+        question: "The app's Ulam Spiral view shows digit sequences as a color grid. What would a 'bad' PRNG look like in this view compared to a 'good' one?",
+        answer: "A bad PRNG would show visible patterns, stripes, or clusters of the same color. A good PRNG would show a visually random mix of colors with no discernible structure."
       }
     ],
     "college": [
@@ -462,6 +554,17 @@ const QUESTION_BANK = {
         type: "fill-in",
         question: "The NIST Statistical Test Suite contains ____ distinct tests for evaluating the randomness of binary sequences.",
         answer: "15"
+      },
+      {
+        type: "short-answer",
+        question: "What is the 'avalanche effect' in cryptographic hash functions, and why is it desirable for a CSPRNG?",
+        answer: "A small change in the input causes a completely different output. This ensures that even if an attacker knows part of the state, they cannot predict past or future outputs."
+      },
+      {
+        type: "mcq",
+        question: "The Blum Blum Shub (BBS) PRNG derives its security from the difficulty of which mathematical problem?",
+        options: ["Discrete logarithm", "Integer factorization", "Elliptic curve point addition", "Solving differential equations"],
+        answer: 1
       }
     ]
   },
@@ -528,6 +631,22 @@ const QUESTION_BANK = {
         type: "short-answer",
         question: "According to Benford's Law, which leading digit is the LEAST common?",
         answer: "9 — it appears as a leading digit only about 4.6% of the time."
+      },
+      {
+        type: "mcq",
+        question: "Why would a list of numbers from 1 to 100 NOT follow Benford's Law?",
+        options: [
+          "Because it contains too many numbers",
+          "Because it is a uniform sequence that doesn't span many orders of magnitude",
+          "Because Benford's Law only works in Base 10",
+          "Because it contains the number 1"
+        ],
+        answer: 1
+      },
+      {
+        type: "hands-on",
+        question: "Using the app, upload two different files and compare their Benford's Law conformance scores. Which file conforms better, and why do you think that is?",
+        answer: "(Varies) Natural text or financial data files typically conform better than image or program files, because natural data spans many orders of magnitude."
       }
     ],
     "high-school": [
@@ -583,6 +702,22 @@ const QUESTION_BANK = {
         type: "fill-in",
         question: "According to Benford's Law, the leading digit '2' appears approximately ____% of the time.",
         answer: "17.6"
+      },
+      {
+        type: "mcq",
+        question: "A forensic accountant notices that in a company's expense reports, the digit '5' appears as the leading digit far more often than Benford's Law predicts. This might suggest...",
+        options: [
+          "The company is very profitable",
+          "Employees may be fabricating expenses just under a $500 or $5,000 approval threshold",
+          "The data is too small to analyze",
+          "The company uses a non-standard accounting system"
+        ],
+        answer: 1
+      },
+      {
+        type: "short-answer",
+        question: "The app shows both a MAD score and a Chi-Square statistic for Benford's Law. What is the key difference between these two measures of conformance?",
+        answer: "MAD (Mean Absolute Deviation) measures the average size of the deviation regardless of sample size. Chi-Square is a hypothesis test that accounts for sample size — larger samples make even small deviations statistically significant."
       }
     ],
     "college": [
@@ -643,6 +778,22 @@ const QUESTION_BANK = {
         type: "fill-in",
         question: "Benford's Law applies most strongly to datasets that span at least ____ orders of magnitude.",
         answer: "2–3 (or several)"
+      },
+      {
+        type: "short-answer",
+        question: "Explain why Benford's Law is base-invariant (i.e., it works in any number base, not just Base 10).",
+        answer: "The law arises from scale invariance and the logarithmic distribution of numbers. Since these properties hold regardless of the base used, the leading-digit law generalizes to any base b as P(d) = log_b(1 + 1/d)."
+      },
+      {
+        type: "mcq",
+        question: "The 'second-digit Benford's Law' states that the second digit also follows a predictable distribution. Compared to the first digit, the second-digit distribution is...",
+        options: [
+          "More uniform (flatter)",
+          "Identical to the first digit",
+          "More skewed toward 9",
+          "Completely random"
+        ],
+        answer: 0
       }
     ]
   },
@@ -699,6 +850,22 @@ const QUESTION_BANK = {
         type: "short-answer",
         question: "If you generated 400 digits of a perfectly random sequence, what would you expect the Ulam Spiral to look like?",
         answer: "It should look like a random mix of colors with no obvious stripes, blocks, or patterns."
+      },
+      {
+        type: "mcq",
+        question: "In the app's Ulam Spiral, what happens to the grid size when you generate more digits?",
+        options: [
+          "The cells get smaller to fit more digits",
+          "The grid grows outward, adding new rings",
+          "The grid stays the same size and old digits are overwritten",
+          "The spiral resets from the center"
+        ],
+        answer: 1
+      },
+      {
+        type: "hands-on",
+        question: "Using the app, generate 100 digits of Pi in Base-2. How many colors appear in the Ulam Spiral? What are they?",
+        answer: "(Varies) Only 2 colors should appear — one for digit 0 and one for digit 1, since Base-2 only has two digits."
       }
     ],
     "high-school": [
@@ -749,6 +916,17 @@ const QUESTION_BANK = {
         type: "short-answer",
         question: "How does the Ulam Spiral complement the Pairs Heatmap as a visualization tool? What does each one show that the other doesn't?",
         answer: "The Ulam Spiral shows the spatial distribution of individual digit values. The Pairs Heatmap shows the frequency of consecutive digit pairs. Together they reveal both individual and sequential patterns."
+      },
+      {
+        type: "mcq",
+        question: "In the app, the Ulam Spiral for Base-16 (Hexadecimal) would show how many distinct colors?",
+        options: ["2", "8", "10", "16"],
+        answer: 3
+      },
+      {
+        type: "short-answer",
+        question: "The app's Ulam Spiral uses color to encode digit values. What is one advantage and one disadvantage of using color as a data encoding method?",
+        answer: "Advantage: Color makes patterns immediately visible at a glance. Disadvantage: Color-blind users may not be able to distinguish all values, and the exact digit value is not readable without a legend."
       }
     ],
     "college": [
@@ -799,6 +977,22 @@ const QUESTION_BANK = {
         type: "fill-in",
         question: "In the Ulam Spiral, the number at position (0,0) — the center — is ____.",
         answer: "1"
+      },
+      {
+        type: "short-answer",
+        question: "The Ulam Spiral maps a 1D sequence to a 2D grid. What information is necessarily lost in this transformation, and how might this affect the interpretation of visual patterns?",
+        answer: "The exact position in the original sequence (temporal order) is lost — you can't tell which digit came first from the spiral alone. This means patterns in the spiral reflect spatial clustering, not necessarily sequential structure."
+      },
+      {
+        type: "mcq",
+        question: "The concept of using a space-filling curve to map 1D data to 2D space is also used in which computer science application?",
+        options: [
+          "Database indexing with space-filling curves like the Hilbert curve",
+          "Sorting algorithms",
+          "Network routing protocols",
+          "Compiler optimization"
+        ],
+        answer: 0
       }
     ]
   },
@@ -855,6 +1049,22 @@ const QUESTION_BANK = {
         type: "short-answer",
         question: "Name one real-world application where a computer needs to generate random numbers.",
         answer: "Examples: Video games (enemy AI, loot drops), shuffling music playlists, online security (passwords), lottery simulations."
+      },
+      {
+        type: "mcq",
+        question: "What does the Pairs Heatmap in the app show?",
+        options: [
+          "How many times each digit appeared",
+          "How often each digit was followed by each other digit",
+          "The order in which digits were generated",
+          "The time taken to generate each digit"
+        ],
+        answer: 1
+      },
+      {
+        type: "hands-on",
+        question: "Using the app, generate 200 digits of Pi in Base-10. Switch to the Ulam Spiral view. Describe what you see — does it look random or patterned?",
+        answer: "(Varies) The spiral should look mostly random with no obvious patterns, since Pi's digits are expected to be uniformly distributed."
       }
     ],
     "high-school": [
@@ -899,6 +1109,17 @@ const QUESTION_BANK = {
         type: "short-answer",
         question: "Explain the concept of 'place value' and how it applies to Base-8 (Octal).",
         answer: "In Base-8, the rightmost digit is 8⁰ (1s), the next is 8¹ (8s), then 8² (64s), etc. Each position is a power of 8."
+      },
+      {
+        type: "mcq",
+        question: "The app's Pi Day Timeline shows milestones unlocking as digits are revealed. Which mathematician's record stood for approximately 900 years?",
+        options: ["Archimedes", "Zu Chongzhi", "Al-Kashi", "Ludolph van Ceulen"],
+        answer: 1
+      },
+      {
+        type: "short-answer",
+        question: "The app shows a 'Chi-Square' statistic. In plain language, what does a low Chi-Square value tell you about a digit sequence?",
+        answer: "A low Chi-Square value means the digits are distributed close to what you'd expect by chance — each digit appears roughly the same number of times, suggesting the sequence is random and unbiased."
       }
     ],
     "college": [
@@ -953,6 +1174,22 @@ const QUESTION_BANK = {
         type: "short-answer",
         question: "Explain the concept of 'scale invariance' in the context of Benford's Law.",
         answer: "Scale invariance means the law holds regardless of units of measurement. Multiplying the entire dataset by a constant leaves the leading-digit distribution unchanged."
+      },
+      {
+        type: "mcq",
+        question: "The BBP (Bailey-Borwein-Plouffe) formula for Pi is remarkable because it allows you to compute...",
+        options: [
+          "Pi to arbitrary precision using only integer arithmetic",
+          "The n-th hexadecimal digit of Pi without computing all preceding digits",
+          "Pi faster than any other known algorithm",
+          "Pi using only the digits of Euler's number e"
+        ],
+        answer: 1
+      },
+      {
+        type: "short-answer",
+        question: "The app visualizes digit sequences in multiple ways (Time Series, Radial, Ulam Spiral, Pairs Heatmap, Lead Time). Explain why using multiple visualizations is more informative than relying on a single one.",
+        answer: "Each visualization highlights different properties: Time Series shows evolution over time, Radial shows overall distribution, Ulam Spiral shows spatial patterns, Pairs Heatmap shows sequential correlations, and Lead Time shows competitive bias. A flaw invisible in one view may be obvious in another."
       }
     ]
   }
